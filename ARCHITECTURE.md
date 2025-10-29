@@ -301,23 +301,23 @@ The Qdrant CMS/DMS follows a modern three-tier architecture:
 ## Future Enhancements
 
 ### Short Term
-- [ ] Batch document upload
-- [ ] Document preview
-- [ ] Advanced filtering
-- [ ] Export functionality
-- [ ] User preferences
+- Batch document upload
+- Document preview
+- Advanced filtering
+- Export functionality
+- User preferences
 
 ### Medium Term
-- [ ] OpenAI GPT integration for better RAG
-- [ ] Multiple language support
-- [ ] Document versioning
-- [ ] Collaborative features
-- [ ] Advanced analytics
+- OpenAI GPT integration for better RAG
+- Multiple language support
+- Document versioning
+- Collaborative features
+- Advanced analytics
 
 ### Long Term
-- [ ] Multi-tenancy
-- [ ] Custom embedding models
-- [ ] Advanced access control (RBAC)
-- [ ] Workflow automation
-- [ ] Integration APIs
-- [ ] Mobile applications
+- Multi-tenancy
+- Custom embedding models
+- Advanced access control (RBAC)
+- Workflow automation
+- Integration APIs
+- Mobile applications
