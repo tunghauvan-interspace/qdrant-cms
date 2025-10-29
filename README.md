@@ -233,11 +233,18 @@ cd backend
 pytest
 ```
 
-Frontend tests (when implemented):
+Frontend tests (Playwright E2E tests):
 ```bash
 cd frontend
+npm install
+npx playwright install chromium
 npm test
 ```
+
+For more details on frontend testing, see:
+- [Playwright Setup Guide](PLAYWRIGHT_SETUP.md)
+- [Test Examples and Results](TEST_EXAMPLES.md)
+- [Frontend Tests README](frontend/tests/README.md)
 
 ## Production Deployment
 
