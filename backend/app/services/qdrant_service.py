@@ -15,9 +15,13 @@ class QdrantService:
         if settings.embedding_model == "sentence-transformers":
             self.embedding_model = SentenceTransformer(settings.embedding_model_name)
             self.embedding_dimension = self.embedding_model.get_sentence_embedding_dimension()
+            self.openai_client = None
         else:
             # For OpenAI embeddings, dimension is typically 1536
             self.embedding_dimension = 1536
+            from openai import OpenAI
+            self.openai_client = OpenAI(api_key=settings.openai_api_key)
+            self.embedding_model = None
             
         self._ensure_collection_exists()
     
@@ -38,9 +42,7 @@ class QdrantService:
             return self.embedding_model.encode(text).tolist()
         else:
             # Use official OpenAI SDK for embeddings
-            from openai import OpenAI
-            client = OpenAI(api_key=settings.openai_api_key)
-            response = client.embeddings.create(
+            response = self.openai_client.embeddings.create(
                 input=text,
                 model="text-embedding-ada-002"
             )

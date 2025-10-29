@@ -78,6 +78,23 @@ class RecursiveCharacterTextSplitter:
         
         return final_chunks
     
+    def _calculate_chunk_length(self, parts: List[str], separator_len: int) -> int:
+        """
+        Calculate the total length of a chunk with separators.
+        
+        Args:
+            parts: List of text parts
+            separator_len: Length of the separator
+            
+        Returns:
+            Total length including separators
+        """
+        if not parts:
+            return 0
+        parts_length = sum(self.length_function(p) for p in parts)
+        separators_length = separator_len * (len(parts) - 1)
+        return parts_length + separators_length
+    
     def _merge_splits(self, splits: List[str], separator: str) -> List[str]:
         """
         Merge splits into chunks of appropriate size.
@@ -118,7 +135,10 @@ class RecursiveCharacterTextSplitter:
                             overlap_parts.insert(0, part)
                             temp_len += self.length_function(part) + separator_len
                         current_chunk = overlap_parts
-                        current_length = sum(self.length_function(p) for p in current_chunk) + separator_len * (len(current_chunk) - 1) if current_chunk else 0
+                        # Calculate current length for overlap parts
+                        current_length = self._calculate_chunk_length(
+                            current_chunk, separator_len
+                        )
                     else:
                         current_chunk = []
                         current_length = 0
