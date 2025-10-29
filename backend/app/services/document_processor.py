@@ -1,6 +1,6 @@
 from pypdf import PdfReader
 from docx import Document as DocxDocument
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from app.utils.text_splitter import RecursiveCharacterTextSplitter
 from typing import List
 import io
 
