@@ -3,7 +3,14 @@
 # This is an example CI/CD workflow that demonstrates how to leverage
 # Docker layer caching in GitHub Actions for faster builds.
 #
-# Place this file in: .github/workflows/docker-build.yml
+# To use this workflow:
+#   1. Copy this file to: .github/workflows/docker-build.yml
+#   2. Customize as needed for your project
+#   3. Configure any required secrets in your GitHub repository
+#
+# This file is named .github-workflows-example.yml (with hyphens) to avoid
+# accidentally triggering workflows in this repository. The standard location
+# for GitHub Actions workflows is .github/workflows/ (with a slash).
 
 name: Build and Test Docker Images
 

@@ -196,7 +196,9 @@ Example for GitHub Actions:
     cache-to: type=registry,ref=myregistry/qdrant-cms:cache,mode=max
 ```
 
-See [.github-workflows-example.yml](.github-workflows-example.yml) for complete GitHub Actions workflow examples with caching.
+See the example workflow file for complete GitHub Actions examples: [.github-workflows-example.yml](.github-workflows-example.yml)
+
+**Note:** To use the example workflow in your project, copy it to `.github/workflows/docker-build.yml` in your repository.
 
 ## Verification
 

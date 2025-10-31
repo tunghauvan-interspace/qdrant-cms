@@ -63,7 +63,7 @@ else
 fi
 
 # Check for non-root user cache setup
-if grep -q "cp -r /root/.cache/torch/\* /home/appuser/.cache/torch/" backend/Dockerfile; then
+if grep -q "cp -r /root/.cache/torch/\\. /home/appuser/.cache/torch/" backend/Dockerfile; then
     echo "   ✓ Non-root user cache setup present"
 else
     echo "   ✗ Non-root user cache setup missing"
@@ -97,7 +97,10 @@ echo "   time docker-compose build backend"
 echo ""
 echo "5. Start the container and verify model is cached:"
 echo "   docker-compose up -d backend"
-echo "   docker-compose exec backend python -c \"from sentence_transformers import SentenceTransformer; model = SentenceTransformer('paraphrase-MiniLM-L3-v2'); print('Model loaded successfully')\""
+VERIFY_CMD='from sentence_transformers import SentenceTransformer; '
+VERIFY_CMD+='model = SentenceTransformer("paraphrase-MiniLM-L3-v2"); '
+VERIFY_CMD+='print("Model loaded successfully")'
+echo "   docker-compose exec backend python -c \"${VERIFY_CMD}\""
 echo "   (Should complete in < 1 second)"
 echo ""
 echo "6. Check model cache directory:"

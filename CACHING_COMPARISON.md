@@ -106,7 +106,7 @@ RUN mkdir -p /app/uploads
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app && \
     mkdir -p /home/appuser/.cache/torch && \
-    cp -r /root/.cache/torch/* /home/appuser/.cache/torch/ 2>/dev/null || true && \
+    cp -r /root/.cache/torch/. /home/appuser/.cache/torch/ 2>/dev/null || true && \
     chown -R appuser:appuser /home/appuser/.cache
 
 USER appuser
