@@ -7,12 +7,14 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    is_admin: str = "false"
 
 
 class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    is_admin: str
     created_at: datetime
     
     class Config:

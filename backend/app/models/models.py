@@ -59,6 +59,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
+    is_admin = Column(String, default="false")  # true, false
     created_at = Column(DateTime, default=datetime.utcnow)
     
     documents = relationship("Document", back_populates="owner")
