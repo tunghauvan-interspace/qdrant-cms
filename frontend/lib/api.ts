@@ -57,6 +57,14 @@ export interface RAGResponse {
   sources: SearchResult[];
 }
 
+export interface DocumentPreview {
+  document_id: number;
+  original_filename: string;
+  file_type: string;
+  content: string;
+  preview_length: number;
+}
+
 // Auth APIs
 export const login = async (data: LoginData) => {
   const formData = new FormData();
@@ -104,6 +112,11 @@ export const getDocument = async (id: number) => {
 
 export const deleteDocument = async (id: number) => {
   const response = await api.delete(`/api/documents/${id}`);
+  return response.data;
+};
+
+export const previewDocument = async (id: number) => {
+  const response = await api.get(`/api/documents/${id}/preview`);
   return response.data;
 };
 

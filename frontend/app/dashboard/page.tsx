@@ -7,9 +7,11 @@ import {
   getDocuments,
   uploadDocument,
   deleteDocument,
+  previewDocument,
   semanticSearch,
   ragSearch,
   Document,
+  DocumentPreview,
   SearchResult,
   RAGResponse,
 } from '@/lib/api';
@@ -38,6 +40,11 @@ export default function Dashboard() {
   const [ragQuery, setRagQuery] = useState('');
   const [ragResponse, setRagResponse] = useState<RAGResponse | null>(null);
   const [ragLoading, setRagLoading] = useState(false);
+  
+  // Preview state
+  const [previewData, setPreviewData] = useState<DocumentPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -137,6 +144,25 @@ export default function Dashboard() {
     } finally {
       setRagLoading(false);
     }
+  };
+
+  const handlePreview = async (id: number) => {
+    setPreviewLoading(true);
+    try {
+      const preview = await previewDocument(id);
+      setPreviewData(preview);
+      setShowPreviewModal(true);
+    } catch (error) {
+      console.error('Error loading preview:', error);
+      alert('Failed to load preview. Please try again.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreviewModal = () => {
+    setShowPreviewModal(false);
+    setPreviewData(null);
   };
 
   if (loading) {
@@ -265,10 +291,16 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
-                        <div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handlePreview(doc.id)}
+                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                          >
+                            Preview
+                          </button>
                           <button
                             onClick={() => handleDelete(doc.id)}
-                            className="ml-4 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
                           >
                             Delete
                           </button>
@@ -457,6 +489,56 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* Preview Modal */}
+      {showPreviewModal && previewData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Document Preview</h2>
+                <p className="text-sm text-gray-600 mt-1">{previewData.original_filename}</p>
+              </div>
+              <button
+                onClick={closePreviewModal}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="prose max-w-none">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-gray-700">
+                      File Type: <span className="text-indigo-600">{previewData.file_type.toUpperCase()}</span>
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      Length: {previewData.preview_length.toLocaleString()} characters
+                    </span>
+                  </div>
+                  <div className="bg-white rounded border border-gray-200 p-4 whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
+                    {previewData.content}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-2 p-6 border-t">
+              <button
+                onClick={closePreviewModal}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

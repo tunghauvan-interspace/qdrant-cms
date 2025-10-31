@@ -12,6 +12,7 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
   - Tagging system
   - Access control (public/private)
   - Full CRUD operations
+  - Document preview with formatted content display
 - **User Authentication**: Secure JWT-based authentication
 - **Modern UI**: Clean, responsive interface built with Next.js and Tailwind CSS
 
@@ -159,7 +160,12 @@ npm run dev
    - **Semantic Search**: Use natural language queries to find relevant documents
    - **RAG Query**: Ask questions about your documents and get AI-generated answers
 
-5. **Manage Documents**:
+5. **Preview Documents**:
+   - Click the "Preview" button next to any document in your list
+   - View the full text content of PDF and DOCX files
+   - Preview is only available for documents you own or public documents
+
+6. **Manage Documents**:
    - View all your documents in the "My Documents" tab
    - Delete documents as needed
    - Filter and browse by tags
@@ -174,6 +180,8 @@ Once the backend is running, visit http://localhost:8000/docs for interactive AP
 - `POST /api/auth/login` - Login and get access token
 - `POST /api/documents/upload` - Upload a document
 - `GET /api/documents/` - List documents
+- `GET /api/documents/{id}` - Get a specific document
+- `GET /api/documents/{id}/preview` - Preview document content
 - `DELETE /api/documents/{id}` - Delete a document
 - `POST /api/search/semantic` - Perform semantic search
 - `POST /api/search/rag` - Perform RAG query
@@ -348,7 +356,7 @@ See [DOCKER_OPTIMIZATION.md](DOCKER_OPTIMIZATION.md) for details on the optimiza
 - [ ] Document versioning
 - [ ] Collaborative features
 - [ ] Full-text search alongside vector search
-- [ ] Document preview
+- [x] Document preview
 - [ ] Batch upload
 - [ ] Export functionality
 - [ ] Analytics and usage statistics

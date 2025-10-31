@@ -86,3 +86,11 @@ class RAGQuery(BaseModel):
 class RAGResponse(BaseModel):
     answer: str
     sources: List[SearchResult]
+
+
+class DocumentPreviewResponse(BaseModel):
+    document_id: int
+    original_filename: str
+    file_type: str
+    content: str
+    preview_length: int

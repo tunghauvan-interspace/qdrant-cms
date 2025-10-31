@@ -7,7 +7,7 @@ import os
 import uuid
 from database import get_db
 from app.models.models import Document, Tag, DocumentChunk, User
-from app.schemas.schemas import DocumentResponse, TagResponse
+from app.schemas.schemas import DocumentResponse, TagResponse, DocumentPreviewResponse
 from app.services.auth_service import get_current_user
 from app.services.document_processor import document_processor
 from app.services.qdrant_service import qdrant_service
@@ -248,3 +248,51 @@ async def list_tags(
     result = await db.execute(select(Tag))
     tags = result.scalars().all()
     return tags
+
+
+@router.get("/{document_id}/preview", response_model=DocumentPreviewResponse)
+async def preview_document(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get a preview of document content"""
+    result = await db.execute(
+        select(Document)
+        .where(Document.id == document_id)
+    )
+    document = result.scalar_one_or_none()
+    
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    
+    # Check access permissions
+    if document.owner_id != current_user.id and document.is_public != "public":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this document"
+        )
+    
+    # Read file content and extract text
+    try:
+        with open(document.file_path, "rb") as f:
+            file_content = f.read()
+        
+        # Extract text from document
+        text = document_processor.process_document(file_content, document.file_type)
+        
+        return DocumentPreviewResponse(
+            document_id=document.id,
+            original_filename=document.original_filename,
+            file_type=document.file_type,
+            content=text,
+            preview_length=len(text)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating preview: {str(e)}"
+        )
