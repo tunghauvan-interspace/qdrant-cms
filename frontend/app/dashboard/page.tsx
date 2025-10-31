@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getCurrentUser,
@@ -165,6 +165,29 @@ export default function Dashboard() {
     setPreviewData(null);
   };
 
+  // Calculate statistics using useMemo for performance
+  const statistics = useMemo(() => {
+    const stats = documents.reduce((acc, doc) => {
+      acc.total += 1;
+      acc.size += doc.file_size;
+      if (doc.is_public === 'public') {
+        acc.public += 1;
+      } else {
+        acc.private += 1;
+      }
+      doc.tags.forEach(tag => acc.tags.add(tag.name));
+      return acc;
+    }, {
+      total: 0,
+      public: 0,
+      private: 0,
+      size: 0,
+      tags: new Set<string>()
+    });
+    
+    return stats;
+  }, [documents]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -175,13 +198,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // Calculate statistics
-  const totalDocs = documents.length;
-  const publicDocs = documents.filter(d => d.is_public === 'public').length;
-  const privateDocs = documents.filter(d => d.is_public === 'private').length;
-  const totalSize = documents.reduce((acc, doc) => acc + doc.file_size, 0);
-  const uniqueTags = new Set(documents.flatMap(d => d.tags.map(t => t.name)));
 
 
   return (
@@ -263,7 +279,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Documents</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{totalDocs}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{statistics.total}</p>
                   </div>
                   <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -277,7 +293,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Public Docs</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{publicDocs}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{statistics.public}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -291,7 +307,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Private Docs</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{privateDocs}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{statistics.private}</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -306,7 +322,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Size</p>
                     <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {(totalSize / (1024 * 1024)).toFixed(1)}
+                      {(statistics.size / (1024 * 1024)).toFixed(1)}
                       <span className="text-lg font-normal text-gray-600"> MB</span>
                     </p>
                   </div>

@@ -11,6 +11,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const REDIRECT_DELAY_MS = 1500;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -21,7 +23,7 @@ export default function Register() {
       setSuccess(true);
       setTimeout(() => {
         router.push('/login');
-      }, 1500);
+      }, REDIRECT_DELAY_MS);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed');
     } finally {
