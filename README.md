@@ -242,8 +242,6 @@ npm test
 ```
 
 For more details on frontend testing, see:
-- [Playwright Setup Guide](PLAYWRIGHT_SETUP.md)
-- [Test Examples and Results](TEST_EXAMPLES.md)
 - [Frontend Tests README](frontend/tests/README.md)
 
 ## Production Deployment

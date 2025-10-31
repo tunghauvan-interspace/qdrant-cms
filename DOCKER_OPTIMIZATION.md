@@ -230,6 +230,6 @@ Or run the automated validation script:
 
 ## Related Documentation
 
-- [CACHING_COMPARISON.md](CACHING_COMPARISON.md) - Detailed before/after comparison with performance metrics
 - [.github-workflows-example.yml](.github-workflows-example.yml) - Example CI/CD workflows with caching
 - [docker-compose.dev-cache.yml](docker-compose.dev-cache.yml) - Development setup with volume caching
+- [README.md](README.md) - Main project documentation
