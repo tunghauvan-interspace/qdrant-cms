@@ -48,14 +48,26 @@ cd qdrant-cms
 
 2. Start all services:
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
-3. Access the application:
+3. Create the admin account:
+```bash
+docker compose exec backend python create_admin.py
+```
+
+4. Access the application:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 - API Documentation: http://localhost:8000/docs
 - Qdrant Dashboard: http://localhost:6333/dashboard
+
+**Default Admin Credentials:**
+- Username: `admin`
+- Email: `admin@example.com`
+- Password: `admin123`
+
+⚠️ **Important:** Change the default admin password after first login!
 
 ### Manual Setup
 
@@ -90,6 +102,11 @@ docker run -p 6333:6333 -p 6334:6334 \
     qdrant/qdrant
 ```
 
+On Windows/PowerShell:
+```powershell
+docker run -p 6333:6333 -p 6334:6334 -v ${PWD}/qdrant_storage:/qdrant/storage qdrant/qdrant
+```
+
 6. Run the backend:
 ```bash
 uvicorn main:app --reload
@@ -121,11 +138,16 @@ npm run dev
 
 ### Getting Started
 
-1. **Register an Account**:
+1. **Admin Account Setup**:
+   - After starting the services, run the admin creation script
+   - Default admin credentials are provided above
+   - Change the default password immediately after login
+
+2. **Register Additional Accounts**:
    - Navigate to http://localhost:3000
    - Click "Register" and create a new account
 
-2. **Upload Documents**:
+3. **Upload Documents**:
    - Log in to your account
    - Go to the "Upload" tab
    - Select a PDF or DOCX file
@@ -133,11 +155,11 @@ npm run dev
    - Choose access level (private/public)
    - Click "Upload Document"
 
-3. **Search Documents**:
+4. **Search Documents**:
    - **Semantic Search**: Use natural language queries to find relevant documents
    - **RAG Query**: Ask questions about your documents and get AI-generated answers
 
-4. **Manage Documents**:
+5. **Manage Documents**:
    - View all your documents in the "My Documents" tab
    - Delete documents as needed
    - Filter and browse by tags
@@ -189,7 +211,40 @@ MAX_FILE_SIZE=50000000
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## Architecture
+## Admin Account Management
+
+The application includes a script to create an admin user account. This is essential for initial setup and administrative access.
+
+### Creating Admin Account
+
+After starting the services with Docker:
+
+```bash
+docker compose exec backend python create_admin.py
+```
+
+### Custom Admin Credentials
+
+You can customize the admin account by setting environment variables before running the script:
+
+```bash
+export ADMIN_USERNAME=myadmin
+export ADMIN_EMAIL=admin@mydomain.com
+export ADMIN_PASSWORD=securepassword123
+docker compose exec backend python create_admin.py
+```
+
+Or create a `.env` file in the backend directory with these variables.
+
+### Admin Features
+
+The admin account has full access to:
+- All documents (including private ones from other users)
+- User management capabilities
+- System configuration
+- All CRUD operations on documents and users
+
+⚠️ **Security Note:** Always change the default admin password after first login and use strong, unique passwords for admin accounts.
 
 ### Document Processing Pipeline
 
@@ -258,7 +313,7 @@ For production deployment, ensure you:
 ### Docker Production Build
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### Docker Build Optimization
