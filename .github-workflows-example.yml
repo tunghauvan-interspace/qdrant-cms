@@ -1,0 +1,306 @@
+# Example GitHub Actions Workflow with Docker Caching
+#
+# This is an example CI/CD workflow that demonstrates how to leverage
+# Docker layer caching in GitHub Actions for faster builds.
+#
+# Place this file in: .github/workflows/docker-build.yml
+
+name: Build and Test Docker Images
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub (optional, for pushing images)
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build backend with caching
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false  # Set to true to push to registry
+          tags: qdrant-cms-backend:${{ github.sha }}
+          # Enable layer caching from GitHub Actions cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Alternative: Use registry for caching (requires login)
+          # cache-from: type=registry,ref=user/app:cache
+          # cache-to: type=registry,ref=user/app:cache,mode=max
+
+      - name: Test backend container
+        run: |
+          docker run --rm -d --name test-backend \
+            -e QDRANT_HOST=localhost \
+            qdrant-cms-backend:${{ github.sha }}
+          
+          # Wait for container to be ready
+          sleep 5
+          
+          # Test that model is pre-cached (should load instantly)
+          docker exec test-backend python -c "
+          import time
+          start = time.time()
+          from sentence_transformers import SentenceTransformer
+          model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
+          elapsed = time.time() - start
+          print(f'Model loaded in {elapsed:.2f} seconds')
+          assert elapsed < 2, 'Model should load from cache in < 2 seconds'
+          print('✓ Model caching verified')
+          "
+          
+          # Cleanup
+          docker stop test-backend
+
+  build-with-docker-compose:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build all services
+        run: |
+          # Build with BuildKit for better caching
+          DOCKER_BUILDKIT=1 docker-compose build
+
+      - name: Start services
+        run: |
+          docker-compose up -d
+          
+          # Wait for services to be ready
+          sleep 10
+
+      - name: Verify caching
+        run: |
+          # Check that model is cached
+          docker-compose exec -T backend python -c "
+          from sentence_transformers import SentenceTransformer
+          import os
+          cache_dir = os.path.expanduser('~/.cache/torch/sentence_transformers')
+          assert os.path.exists(cache_dir), 'Cache directory should exist'
+          model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
+          print('✓ Model loaded from cache')
+          "
+
+      - name: Run health check
+        run: |
+          # Check backend health
+          curl -f http://localhost:8000/health || exit 1
+          echo "✓ Backend is healthy"
+
+      - name: Cleanup
+        if: always()
+        run: docker-compose down -v
+
+# Alternative workflow with build time tracking
+  build-with-timing:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend (timed)
+        run: |
+          echo "Starting build at $(date)"
+          START_TIME=$(date +%s)
+          
+          DOCKER_BUILDKIT=1 docker build \
+            --tag qdrant-cms-backend:test \
+            --cache-from qdrant-cms-backend:cache \
+            ./backend
+          
+          END_TIME=$(date +%s)
+          BUILD_DURATION=$((END_TIME - START_TIME))
+          
+          echo "Build completed in ${BUILD_DURATION} seconds"
+          
+          # Verify build is fast for cached builds (< 2 minutes)
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            if [ $BUILD_DURATION -gt 120 ]; then
+              echo "Warning: Build took longer than expected"
+              echo "This might indicate caching issues"
+            else
+              echo "✓ Build completed quickly (cached layers working)"
+            fi
+          fi
+
+      - name: Save build metrics
+        run: |
+          echo "build_duration_seconds: $BUILD_DURATION" >> metrics.txt
+          cat metrics.txt
+
+# Example workflow for multi-platform builds
+  build-multiplatform:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build multi-platform
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: qdrant-cms-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Note: First build for each platform will be slow
+          # Subsequent builds will be much faster with caching
+
+---
+
+# Performance Expectations
+
+## First Build (no cache)
+- Expected duration: 5-8 minutes
+- Downloads all packages and models
+- Creates all Docker layers
+
+## Subsequent Builds (with cache)
+
+### Code changes only:
+- Expected duration: 20-40 seconds
+- Only rebuilds changed layers
+- Reuses cached packages and models
+
+### Requirements.txt changes:
+- Expected duration: 2-4 minutes
+- Downloads only new/changed packages
+- Model remains cached
+
+### No changes:
+- Expected duration: 5-15 seconds
+- Validates cached layers
+- No downloads needed
+
+---
+
+# Optimization Tips
+
+1. **Use BuildKit**: Always enable BuildKit for better caching
+   ```yaml
+   env:
+     DOCKER_BUILDKIT: 1
+   ```
+
+2. **Cache Docker layers**: Use `actions/cache` or buildx cache
+   ```yaml
+   cache-from: type=gha
+   cache-to: type=gha,mode=max
+   ```
+
+3. **Parallelize builds**: Build frontend and backend in parallel
+   ```yaml
+   strategy:
+     matrix:
+       service: [backend, frontend]
+   ```
+
+4. **Use cache scoping**: Scope cache by branch for better hit rates
+   ```yaml
+   key: ${{ runner.os }}-buildx-${{ github.ref }}-${{ github.sha }}
+   restore-keys: |
+     ${{ runner.os }}-buildx-${{ github.ref }}-
+     ${{ runner.os }}-buildx-
+   ```
+
+5. **Monitor cache usage**: Track build times to identify cache issues
+   ```yaml
+   - name: Report build time
+     run: echo "Build took ${BUILD_DURATION}s"
+   ```
+
+---
+
+# Troubleshooting
+
+## Cache not working
+
+If builds are consistently slow:
+
+1. Check BuildKit is enabled
+2. Verify cache-from/cache-to are configured
+3. Review cache restore-keys pattern
+4. Check GitHub Actions cache usage (Settings → Actions → Caches)
+
+## Out of cache space
+
+GitHub Actions has cache limits:
+- 10 GB per repository
+- Oldest caches are evicted first
+
+Solutions:
+- Use `mode=max` to cache intermediate layers
+- Clean up old caches periodically
+- Use registry caching instead for larger projects
+
+## Model download in CI
+
+If model downloads during build:
+
+1. Check Dockerfile has pre-download step
+2. Verify cache layers are preserved
+3. Test locally: `docker build --no-cache ./backend`
+
+---
+
+# Cost Savings Example
+
+Assuming 20 builds per day:
+
+**Without caching:**
+- 20 builds × 5 min = 100 min/day
+- Monthly: ~3000 minutes (~50 hours)
+- Cost: Significant Actions minutes usage
+
+**With caching:**
+- First build: 5 min
+- 19 cached builds × 30 sec = ~10 min
+- Total: 15 min/day
+- Monthly: ~450 minutes (~7.5 hours)
+- **Savings: 85% reduction in build minutes**
+
+For organizations:
+- Faster CI feedback
+- Lower Actions costs
+- Better developer productivity

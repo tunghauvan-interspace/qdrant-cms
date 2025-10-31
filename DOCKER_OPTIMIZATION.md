@@ -196,6 +196,8 @@ Example for GitHub Actions:
     cache-to: type=registry,ref=myregistry/qdrant-cms:cache,mode=max
 ```
 
+See [.github-workflows-example.yml](.github-workflows-example.yml) for complete GitHub Actions workflow examples with caching.
+
 ## Verification
 
 To verify the optimizations are working:
@@ -215,3 +217,15 @@ docker-compose exec backend python -c "from sentence_transformers import Sentenc
 ```
 
 The last command should complete almost instantly (< 1 second) instead of taking several seconds to download the model.
+
+Or run the automated validation script:
+
+```bash
+./test-caching.sh
+```
+
+## Related Documentation
+
+- [CACHING_COMPARISON.md](CACHING_COMPARISON.md) - Detailed before/after comparison with performance metrics
+- [.github-workflows-example.yml](.github-workflows-example.yml) - Example CI/CD workflows with caching
+- [docker-compose.dev-cache.yml](docker-compose.dev-cache.yml) - Development setup with volume caching
