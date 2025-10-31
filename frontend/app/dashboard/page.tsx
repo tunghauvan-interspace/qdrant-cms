@@ -201,78 +201,163 @@ export default function Dashboard() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Persistent Sidebar - Standard CMS Layout */}
+      <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col z-20 hidden lg:flex">
+        {/* Sidebar Header */}
+        <div className="flex items-center space-x-3 p-6 border-b border-gray-200">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Qdrant CMS</h1>
+            <p className="text-xs text-gray-500">Document System</p>
+          </div>
+        </div>
+
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <div className="space-y-1">
+            {[
+              { id: 'documents', label: 'Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', description: 'Manage your files' },
+              { id: 'upload', label: 'Upload', icon: 'M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12', description: 'Add new content' },
+              { id: 'search', label: 'Search', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', description: 'Find documents' },
+              { id: 'rag', label: 'AI Query', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z', description: 'Ask questions' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`w-full flex items-start p-3 rounded-lg transition-all group ${
+                  activeTab === item.id
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                aria-label={`Navigate to ${item.label}`}
+                aria-current={activeTab === item.id ? 'page' : undefined}
+              >
+                <svg className={`w-5 h-5 mr-3 flex-shrink-0 ${activeTab === item.id ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                </svg>
+                <div className="text-left">
+                  <div className="text-sm font-medium">{item.label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* Sidebar Footer - User Info */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{user?.username}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+              aria-label="Logout"
+              title="Logout"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area - CMS Standard Layout */}
+      <div className="flex-1 lg:pl-64">
+        {/* Fixed Header for Mobile/Tablet */}
+        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 lg:hidden">
+          <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Qdrant CMS</h1>
-                <p className="text-xs text-gray-500">Document Management System</p>
+                <h1 className="text-lg font-bold text-gray-900">Qdrant CMS</h1>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="btn btn-danger flex items-center"
-                aria-label="Logout"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+            <button
+              onClick={handleLogout}
+              className="btn btn-danger"
+              aria-label="Logout"
+            >
+              Logout
+            </button>
+          </div>
+          {/* Mobile Navigation */}
+          <nav className="px-4 pb-2 overflow-x-auto">
+            <div className="flex space-x-2">
+              {[
+                { id: 'documents', label: 'Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                { id: 'upload', label: 'Upload', icon: 'M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12' },
+                { id: 'search', label: 'Search', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
+                { id: 'rag', label: 'AI Query', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as any)}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                    activeTab === item.id
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                  </svg>
+                  {item.label}
+                </button>
+              ))}
             </div>
-          </div>
-        </div>
-      </header>
+          </nav>
+        </header>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 overflow-x-auto">
-            {[
-              { id: 'documents', label: 'My Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-              { id: 'upload', label: 'Upload', icon: 'M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12' },
-              { id: 'search', label: 'Search', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
-              { id: 'rag', label: 'RAG Query', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center py-4 px-4 border-b-2 font-medium text-sm transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-                aria-label={`Navigate to ${tab.label}`}
-                aria-current={activeTab === tab.id ? 'page' : undefined}
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
-                </svg>
-                {tab.label}
-              </button>
-            ))}
+        {/* Main Content Area */}
+        <main className="p-6">
+          {/* Page Header with Breadcrumb */}
+          <div className="mb-6">
+            <div className="flex items-center text-sm text-gray-500 mb-2">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>Dashboard</span>
+              <svg className="w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="text-gray-900 font-medium">
+                {activeTab === 'documents' && 'Documents'}
+                {activeTab === 'upload' && 'Upload'}
+                {activeTab === 'search' && 'Search'}
+                {activeTab === 'rag' && 'AI Query'}
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {activeTab === 'documents' && 'Document Library'}
+              {activeTab === 'upload' && 'Upload New Content'}
+              {activeTab === 'search' && 'Semantic Search'}
+              {activeTab === 'rag' && 'AI-Powered Query'}
+            </h2>
           </div>
-        </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* Documents Tab */}
         {activeTab === 'documents' && (
-          <div className="px-4 py-6 sm:px-0 space-y-6 animate-fade-in">
+          <div className="space-y-6 animate-fade-in">
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="card p-6">
@@ -461,18 +546,8 @@ export default function Dashboard() {
 
         {/* Upload Tab */}
         {activeTab === 'upload' && (
-          <div className="px-4 py-6 sm:px-0 animate-fade-in">
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Upload Document</h2>
-                <p className="mt-2 text-gray-600">Add a new document to your collection</p>
-              </div>
-
+          <div className="animate-fade-in">
+            <div className="max-w-3xl">
               <div className="card p-6 sm:p-8">
                 <form onSubmit={handleUpload} className="space-y-6">
                   {uploadError && (
@@ -622,18 +697,8 @@ export default function Dashboard() {
 
         {/* Search Tab */}
         {activeTab === 'search' && (
-          <div className="px-4 py-6 sm:px-0 animate-fade-in">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Semantic Search</h2>
-                <p className="mt-2 text-gray-600">Find documents using natural language queries</p>
-              </div>
-
+          <div className="animate-fade-in">
+            <div className="space-y-6">
               <div className="card p-6">
                 <form onSubmit={handleSearch} className="space-y-4">
                   <div className="flex gap-3">
@@ -736,18 +801,8 @@ export default function Dashboard() {
 
         {/* RAG Tab */}
         {activeTab === 'rag' && (
-          <div className="px-4 py-6 sm:px-0 animate-fade-in">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">RAG Query</h2>
-                <p className="mt-2 text-gray-600">Ask questions about your documents and get intelligent answers</p>
-              </div>
-
+          <div className="animate-fade-in">
+            <div className="space-y-6">
               <div className="card p-6">
                 <form onSubmit={handleRAG} className="space-y-4">
                   <div className="flex gap-3">
@@ -845,7 +900,8 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
 
       {/* Preview Modal */}
       {showPreviewModal && previewData && (
