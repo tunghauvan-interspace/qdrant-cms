@@ -1,0 +1,30 @@
+# Docker Compose Override for Development with Model Caching
+#
+# This file demonstrates how to use volume mounts to cache sentence-transformers
+# models between container restarts during development.
+#
+# To use this file:
+#   docker-compose -f docker-compose.yml -f docker-compose.dev-cache.yml up -d
+#
+# Benefits:
+#   - Models persist between container rebuilds
+#   - Faster development cycle when frequently rebuilding
+#   - Reduced bandwidth usage during development
+#
+# Note: For production, models are pre-downloaded in the image (see Dockerfile)
+
+version: '3.8'
+
+services:
+  backend:
+    volumes:
+      # Cache sentence-transformers models on host
+      - sentence_transformers_cache:/home/appuser/.cache/torch/sentence_transformers
+      # Cache pip packages on host (optional, for faster pip installs)
+      - pip_cache:/home/appuser/.cache/pip
+
+volumes:
+  # Named volume for sentence-transformers model cache
+  sentence_transformers_cache:
+  # Named volume for pip cache (useful when adding new packages)
+  pip_cache:

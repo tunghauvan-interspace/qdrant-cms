@@ -13,6 +13,10 @@ cd qdrant-cms
 docker-compose up -d
 ```
 
+> **Note**: The first build may take 3-5 minutes as it downloads dependencies and ML models. 
+> Subsequent builds will be much faster (10-30 seconds) thanks to Docker layer caching.
+> See [DOCKER_OPTIMIZATION.md](DOCKER_OPTIMIZATION.md) for details.
+
 3. **Wait for services to start** (about 30 seconds):
 ```bash
 docker-compose logs -f
