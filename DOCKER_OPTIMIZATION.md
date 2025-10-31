@@ -170,12 +170,14 @@ This is expected. Subsequent builds will be much faster due to Docker layer cach
 
 ### Multi-platform Builds
 
-If building for multiple architectures, use BuildKit cache mounts:
+For advanced use cases with multiple architectures, you can use BuildKit cache mounts as an alternative caching strategy:
 
 ```dockerfile
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user -r requirements.txt
 ```
+
+**Note:** This is an alternative approach to the layer caching used in our current Dockerfile. Use this if you need to build for multiple architectures (linux/amd64, linux/arm64, etc.).
 
 ### CI/CD Optimization
 

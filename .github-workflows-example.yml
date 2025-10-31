@@ -139,6 +139,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build backend (timed)
+        id: build
         run: |
           echo "Starting build at $(date)"
           START_TIME=$(date +%s)
@@ -153,6 +154,9 @@ jobs:
           
           echo "Build completed in ${BUILD_DURATION} seconds"
           
+          # Export for use in next step
+          echo "build_duration=$BUILD_DURATION" >> $GITHUB_OUTPUT
+          
           # Verify build is fast for cached builds (< 2 minutes)
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             if [ $BUILD_DURATION -gt 120 ]; then
@@ -165,7 +169,7 @@ jobs:
 
       - name: Save build metrics
         run: |
-          echo "build_duration_seconds: $BUILD_DURATION" >> metrics.txt
+          echo "build_duration_seconds: ${{ steps.build.outputs.build_duration }}" >> metrics.txt
           cat metrics.txt
 
 # Example workflow for multi-platform builds
