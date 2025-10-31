@@ -263,6 +263,15 @@ For production deployment, ensure you:
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
+### Docker Build Optimization
+
+The backend Docker image is optimized for fast builds and reduced bandwidth usage:
+- Pip caching enabled for faster dependency installation
+- Sentence-transformers models pre-downloaded during build
+- No runtime model downloads needed
+
+See [DOCKER_OPTIMIZATION.md](DOCKER_OPTIMIZATION.md) for details on the optimizations and best practices.
+
 ## Security Considerations
 
 - JWT-based authentication with expiring tokens
