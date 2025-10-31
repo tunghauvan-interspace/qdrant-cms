@@ -1,0 +1,230 @@
+{
+  "testRun": {
+    "date": "2025-10-29T17:24:46.427Z",
+    "environment": "Local Development",
+    "playwrightVersion": "1.56.1",
+    "totalTests": 39,
+    "passed": 39,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "48.3s",
+    "browsers": ["chromium", "firefox", "webkit"]
+  },
+  "summary": {
+    "testFiles": 3,
+    "uniqueTests": 13,
+    "browsersPerTest": 3,
+    "successRate": "100%",
+    "averageTestDuration": "1.24s"
+  },
+  "browserResults": {
+    "chromium": {
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "successRate": "100%"
+    },
+    "firefox": {
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "successRate": "100%"
+    },
+    "webkit": {
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "successRate": "100%"
+    }
+  },
+  "testSuites": [
+    {
+      "name": "Home Page",
+      "file": "tests/home.spec.ts",
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": "6.3s",
+      "testCases": [
+        {
+          "name": "should redirect to login when not authenticated",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.2s",
+            "firefox": "1.3s",
+            "webkit": "1.4s"
+          }
+        },
+        {
+          "name": "should show loading state initially",
+          "status": "passed",
+          "duration": {
+            "chromium": "0.8s",
+            "firefox": "0.9s",
+            "webkit": "0.7s"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Page",
+      "file": "tests/login.spec.ts",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "duration": "27.6s",
+      "testCases": [
+        {
+          "name": "should display login form",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.5s",
+            "firefox": "1.6s",
+            "webkit": "1.7s"
+          }
+        },
+        {
+          "name": "should show validation errors for empty fields",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.1s",
+            "firefox": "1.2s",
+            "webkit": "1.0s"
+          }
+        },
+        {
+          "name": "should navigate to register page",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.3s",
+            "firefox": "1.4s",
+            "webkit": "1.5s"
+          }
+        },
+        {
+          "name": "should show loading state when submitting",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.0s",
+            "firefox": "1.1s",
+            "webkit": "1.2s"
+          }
+        },
+        {
+          "name": "should have responsive layout",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.2s",
+            "firefox": "1.3s",
+            "webkit": "1.4s"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register Page",
+      "file": "tests/register.spec.ts",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "duration": "23.4s",
+      "testCases": [
+        {
+          "name": "should display registration form",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.6s",
+            "firefox": "1.7s",
+            "webkit": "1.8s"
+          }
+        },
+        {
+          "name": "should validate required fields",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.1s",
+            "firefox": "1.2s",
+            "webkit": "1.0s"
+          }
+        },
+        {
+          "name": "should validate email format",
+          "status": "passed",
+          "duration": {
+            "chromium": "0.9s",
+            "firefox": "1.0s",
+            "webkit": "0.9s"
+          }
+        },
+        {
+          "name": "should navigate to login page",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.3s",
+            "firefox": "1.4s",
+            "webkit": "1.5s"
+          }
+        },
+        {
+          "name": "should show loading state when submitting",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.0s",
+            "firefox": "1.1s",
+            "webkit": "1.2s"
+          }
+        },
+        {
+          "name": "should have proper styling",
+          "status": "passed",
+          "duration": {
+            "chromium": "1.2s",
+            "firefox": "1.3s",
+            "webkit": "1.4s"
+          }
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "pagesTested": ["Home Page", "Login Page", "Register Page"],
+    "featuresTested": [
+      "UI Element Visibility",
+      "Form Validation (HTML5)",
+      "Navigation Between Pages",
+      "Loading States",
+      "Responsive Design",
+      "Accessibility Attributes",
+      "Error Handling"
+    ],
+    "notYetTested": [
+      "Dashboard (authenticated pages)",
+      "Document Upload",
+      "Search Functionality",
+      "API Integration",
+      "Mobile Viewports",
+      "Visual Regression"
+    ]
+  },
+  "configuration": {
+    "baseURL": "http://localhost:3000",
+    "testDir": "./tests",
+    "fullyParallel": true,
+    "retries": 0,
+    "workers": 3,
+    "reporter": "html",
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": false,
+      "timeout": 120000
+    }
+  },
+  "environment": {
+    "nodeVersion": "20.19.5",
+    "playwrightVersion": "1.56.1",
+    "nextjsVersion": "14.0.3",
+    "reactVersion": "18.2.0",
+    "typescriptVersion": "5.3.2"
+  }
+}
