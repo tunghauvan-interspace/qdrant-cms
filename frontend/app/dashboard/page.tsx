@@ -42,7 +42,7 @@ export default function Dashboard() {
   const [ragLoading, setRagLoading] = useState(false);
   
   // Preview state
-  const [previewDocument, setPreviewDocument] = useState<DocumentPreview | null>(null);
+  const [previewData, setPreviewData] = useState<DocumentPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
@@ -150,7 +150,7 @@ export default function Dashboard() {
     setPreviewLoading(true);
     try {
       const preview = await previewDocument(id);
-      setPreviewDocument(preview);
+      setPreviewData(preview);
       setShowPreviewModal(true);
     } catch (error) {
       console.error('Error loading preview:', error);
@@ -162,7 +162,7 @@ export default function Dashboard() {
 
   const closePreviewModal = () => {
     setShowPreviewModal(false);
-    setPreviewDocument(null);
+    setPreviewData(null);
   };
 
   if (loading) {
@@ -491,14 +491,14 @@ export default function Dashboard() {
       </main>
 
       {/* Preview Modal */}
-      {showPreviewModal && previewDocument && (
+      {showPreviewModal && previewData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="flex justify-between items-center p-6 border-b">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Document Preview</h2>
-                <p className="text-sm text-gray-600 mt-1">{previewDocument.original_filename}</p>
+                <p className="text-sm text-gray-600 mt-1">{previewData.original_filename}</p>
               </div>
               <button
                 onClick={closePreviewModal}
@@ -514,14 +514,14 @@ export default function Dashboard() {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-medium text-gray-700">
-                      File Type: <span className="text-indigo-600">{previewDocument.file_type.toUpperCase()}</span>
+                      File Type: <span className="text-indigo-600">{previewData.file_type.toUpperCase()}</span>
                     </span>
                     <span className="text-sm text-gray-600">
-                      Length: {previewDocument.preview_length.toLocaleString()} characters
+                      Length: {previewData.preview_length.toLocaleString()} characters
                     </span>
                   </div>
                   <div className="bg-white rounded border border-gray-200 p-4 whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
-                    {previewDocument.content}
+                    {previewData.content}
                   </div>
                 </div>
               </div>
