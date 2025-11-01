@@ -252,9 +252,47 @@ The admin account has full access to:
 - System configuration
 - All CRUD operations on documents and users
 
-⚠️ **Security Note:** Always change the default admin password after first login and use strong, unique passwords for admin accounts.
+## Helper Scripts
 
-### Document Processing Pipeline
+The project includes several utility scripts located in `backend/helper/` for maintenance and debugging purposes.
+
+### check_docs.py
+
+Lists all documents stored in the database.
+
+**Usage:**
+```bash
+cd backend
+python helper/check_docs.py
+```
+
+**Output:** Displays the number of documents and their filenames with IDs.
+
+### recreate_collection.py
+
+Recreates the 'documents' collection in Qdrant. Useful for resetting the vector database.
+
+**Usage:**
+```bash
+cd backend
+python helper/recreate_collection.py
+```
+
+**Note:** This will delete all existing vectors in the 'documents' collection. Use with caution.
+
+### recreate_memory.py
+
+Recreates the 'memory' collection in Qdrant. Useful for resetting the memory vector database.
+
+**Usage:**
+```bash
+cd backend
+python helper/recreate_memory.py
+```
+
+**Note:** This will delete all existing vectors in the 'memory' collection. Use with caution.
+
+## Production Deployment
 
 1. **Upload**: User uploads PDF/DOCX file
 2. **Text Extraction**: Extract text from document

@@ -50,7 +50,7 @@ async def semantic_search(
             SearchResult(
                 document_id=document_id,
                 filename=result["payload"]["filename"],
-                chunk_content=result["payload"]["text"],
+                chunk_content=result["payload"]["document"],
                 score=result["score"],
                 document=DocumentResponse.model_validate(document)
             )
@@ -94,12 +94,12 @@ async def rag_search(
         if document.owner_id != current_user.id and document.is_public != "public":
             continue
         
-        context_texts.append(result["payload"]["text"])
+        context_texts.append(result["payload"]["document"])
         sources.append(
             SearchResult(
                 document_id=document_id,
                 filename=result["payload"]["filename"],
-                chunk_content=result["payload"]["text"],
+                chunk_content=result["payload"]["document"],
                 score=result["score"],
                 document=DocumentResponse.model_validate(document)
             )

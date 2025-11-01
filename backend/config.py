@@ -13,12 +13,12 @@ class Settings(BaseSettings):
     
     # Embedding Configuration
     embedding_model: str = "sentence-transformers"
-    # Using paraphrase-MiniLM-L3-v2: smaller and faster than all-MiniLM-L6-v2
+    # Using all-MiniLM-L6-v2 to match MCP server
     # Alternative options:
-    # - "all-MiniLM-L6-v2": 80MB, good quality (previous default)
-    # - "paraphrase-MiniLM-L3-v2": 60MB, lighter and faster (new default)
+    # - "all-MiniLM-L6-v2": 80MB, good quality (current default for compatibility)
+    # - "paraphrase-MiniLM-L3-v2": 60MB, lighter and faster
     # - "paraphrase-multilingual-MiniLM-L12-v2": 420MB, for multilingual (Vietnamese support)
-    embedding_model_name: str = "paraphrase-MiniLM-L3-v2"
+    embedding_model_name: str = "all-MiniLM-L6-v2"
     
     # Database Configuration
     database_url: str = "sqlite+aiosqlite:///./documents.db"

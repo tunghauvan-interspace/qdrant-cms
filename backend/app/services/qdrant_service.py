@@ -15,10 +15,14 @@ class QdrantService:
         if settings.embedding_model == "sentence-transformers":
             self.embedding_model = SentenceTransformer(settings.embedding_model_name)
             self.embedding_dimension = self.embedding_model.get_sentence_embedding_dimension()
+            # Generate vector name to match MCP server expectations
+            model_clean = settings.embedding_model_name.replace("/", "-").replace("_", "-").lower()
+            self.vector_name = f"fast-{model_clean}"
             self.openai_client = None
         else:
             # For OpenAI embeddings, dimension is typically 1536
             self.embedding_dimension = 1536
+            self.vector_name = "openai-ada-002"
             from openai import OpenAI
             self.openai_client = OpenAI(api_key=settings.openai_api_key)
             self.embedding_model = None
@@ -27,14 +31,33 @@ class QdrantService:
     
     def _ensure_collection_exists(self):
         """Create collection if it doesn't exist"""
-        collections = self.client.get_collections().collections
-        collection_names = [col.name for col in collections]
-        
-        if self.collection_name not in collection_names:
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=VectorParams(size=self.embedding_dimension, distance=Distance.COSINE)
-            )
+        try:
+            collections = self.client.get_collections().collections
+            collection_names = [col.name for col in collections]
+            
+            if self.collection_name not in collection_names:
+                self.client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config={
+                        self.vector_name: VectorParams(size=self.embedding_dimension, distance=Distance.COSINE)
+                    }
+                )
+                print(f"Created collection '{self.collection_name}' with vector '{self.vector_name}'")
+            else:
+                print(f"Collection '{self.collection_name}' already exists")
+        except Exception as e:
+            print(f"Warning: Could not check/create collection due to Qdrant version compatibility issue: {e}")
+            # Try to create the collection anyway, it will fail silently if it already exists
+            try:
+                self.client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config={
+                        self.vector_name: VectorParams(size=self.embedding_dimension, distance=Distance.COSINE)
+                    }
+                )
+                print(f"Created collection '{self.collection_name}' with vector '{self.vector_name}'")
+            except Exception as create_e:
+                print(f"Collection '{self.collection_name}' likely already exists: {create_e}")
     
     def get_embedding(self, text: str) -> List[float]:
         """Generate embedding for text"""
@@ -59,14 +82,14 @@ class QdrantService:
         embedding = self.get_embedding(text)
         
         payload = {
-            "text": text,
+            "document": text,
             "document_id": document_id,
             **(metadata or {})
         }
         
         point = PointStruct(
             id=chunk_id,
-            vector=embedding,
+            vector={self.vector_name: embedding},
             payload=payload
         )
         
@@ -88,7 +111,7 @@ class QdrantService:
         
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=query_embedding,
+            query_vector=(self.vector_name, query_embedding),
             limit=top_k,
             query_filter=filter_conditions
         )

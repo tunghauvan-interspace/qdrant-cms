@@ -36,7 +36,19 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - backend
-    command: npm run dev
+  mcp-server:
+    image: python:3.11-slim
+    ports:
+      - "8001:8000"
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - COLLECTION_NAME=documents
+      - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=8000
+    depends_on:
+      - qdrant
+    command: ["sh", "-c", "pip install uv && uvx mcp-server-qdrant --transport sse"]
 
 volumes:
   qdrant_storage:
