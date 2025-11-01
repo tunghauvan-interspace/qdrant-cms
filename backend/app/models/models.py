@@ -114,7 +114,7 @@ class DocumentAnalytics(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True)  # Null for anonymous
     action = Column(String, nullable=False)  # view, download, search_hit
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
-    metadata = Column(JSON, nullable=True)  # Additional context
+    action_metadata = Column(JSON, nullable=True)  # Additional context
     
     document = relationship("Document", back_populates="analytics")
     user = relationship("User", foreign_keys=[user_id])

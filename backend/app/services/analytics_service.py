@@ -14,14 +14,14 @@ class AnalyticsService:
         document_id: int,
         action: str,
         user_id: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        action_metadata: Optional[Dict[str, Any]] = None
     ) -> DocumentAnalytics:
         """Track a document action (view, download, search_hit)"""
         analytics = DocumentAnalytics(
             document_id=document_id,
             user_id=user_id,
             action=action,
-            metadata=metadata
+            action_metadata=action_metadata
         )
         db.add(analytics)
         await db.flush()

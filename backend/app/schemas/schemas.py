@@ -146,7 +146,7 @@ class DocumentAnalyticsResponse(BaseModel):
     user_id: Optional[int]
     action: str
     timestamp: datetime
-    metadata: Optional[Dict[str, Any]]
+    action_metadata: Optional[Dict[str, Any]]
     
     class Config:
         from_attributes = True
