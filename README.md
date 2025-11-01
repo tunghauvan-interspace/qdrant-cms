@@ -4,17 +4,55 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
 
 ## Features
 
+### Core Features
 - **Document Upload**: Upload PDF and DOCX files
 - **Automatic Processing**: Documents are automatically chunked and embedded
 - **Vector Search**: Semantic search powered by Qdrant
 - **RAG Support**: Retrieval-Augmented Generation for intelligent document queries
-- **Document Management**: 
-  - Tagging system
-  - Access control (public/private)
-  - Full CRUD operations
-  - Document preview with formatted content display
 - **User Authentication**: Secure JWT-based authentication
 - **Modern UI**: Clean, responsive interface built with Next.js and Tailwind CSS
+
+### Document Management
+- **Tagging System**: Organize documents with custom tags
+- **Access Control**: Public/private/restricted document visibility
+- **Full CRUD Operations**: Create, read, update, and delete documents
+- **Document Preview**: View formatted content display for PDF and DOCX files
+- **Metadata Editing**: Update document descriptions, tags, and visibility settings
+
+### Advanced Features ✨ NEW
+- **📝 Document Versioning**: 
+  - Automatic version tracking for all document changes
+  - View complete version history with timestamps
+  - Rollback to any previous version
+  - Track who made changes and when
+  
+- **🤝 Advanced Sharing System**:
+  - Share documents with specific users
+  - Granular permissions: View, Edit, or Admin access
+  - Manage sharing permissions and revoke access
+  - View all documents shared with you
+  
+- **📊 Comprehensive Analytics**:
+  - Track document views, downloads, and search hits
+  - View usage statistics and engagement metrics
+  - Identify popular documents and trending content
+  - User activity tracking and reporting
+  
+- **⭐ Favorites/Bookmarking**:
+  - Bookmark important documents for quick access
+  - Personal favorites list
+  - Easy add/remove from any document
+  
+- **⚡ Bulk Operations**:
+  - Update metadata for multiple documents at once
+  - Share multiple documents with users simultaneously
+  - Efficient batch processing for large document sets
+  
+- **📤 Export Capabilities**:
+  - Export document metadata as JSON
+  - Download documents as ZIP archives
+  - Export metadata to CSV for analysis
+  - Bulk export functionality
 
 ## Technology Stack
 
@@ -24,7 +62,7 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
 - **LangChain**: Document processing and chunking
 - **Sentence Transformers**: Local embedding generation
 - **SQLAlchemy**: Database ORM
-- **SQLite**: Metadata storage
+- **SQLite**: Metadata storage (upgradable to PostgreSQL)
 
 ### Frontend
 - **Next.js 14**: React framework with App Router
@@ -57,7 +95,12 @@ docker compose up -d --build
 docker compose exec backend python create_admin.py
 ```
 
-4. Access the application:
+4. **Upgrade Database** (if upgrading from previous version):
+```bash
+docker compose exec backend python migrate_database.py
+```
+
+5. Access the application:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 - API Documentation: http://localhost:8000/docs
@@ -69,6 +112,24 @@ docker compose exec backend python create_admin.py
 - Password: `admin123`
 
 ⚠️ **Important:** Change the default admin password after first login!
+
+### Upgrading from Previous Version
+
+If you're upgrading from a previous version of Qdrant CMS, you need to run the database migration:
+
+```bash
+# Using Docker
+docker compose exec backend python migrate_database.py
+
+# Or locally
+cd backend
+python migrate_database.py
+```
+
+This will:
+- Add new columns to the documents table (last_modified, version)
+- Create new tables for versions, shares, analytics, and favorites
+- Preserve all existing data
 
 ### Manual Setup
 
@@ -170,21 +231,100 @@ npm run dev
    - Delete documents as needed
    - Filter and browse by tags
 
+### Advanced Features Usage
+
+#### Document Editing & Versioning
+- **Edit Document Metadata**: Update description, tags, and visibility settings
+- **Version History**: View all changes made to a document over time
+- **Rollback**: Restore a document to any previous version
+- All changes are automatically tracked with timestamps and user information
+
+#### Sharing Documents
+- **Share with Users**: Grant specific users access to your documents
+- **Set Permissions**:
+  - **View**: Can only view and download the document
+  - **Edit**: Can modify metadata and content
+  - **Admin**: Full control including sharing with others
+- **Manage Shares**: View and revoke access for shared documents
+- **Shared with Me**: Access documents others have shared with you
+
+#### Analytics & Insights
+- **Track Engagement**: Monitor views, downloads, and search hits
+- **Usage Statistics**: View comprehensive analytics for your documents
+- **Popular Documents**: Discover trending and most-viewed content
+- **Activity Reports**: Track user engagement over time periods (7, 30, 90 days)
+
+#### Favorites & Quick Access
+- **Bookmark Documents**: Mark important documents as favorites
+- **Quick Access**: View all your favorite documents in one place
+- **Easy Management**: Add or remove favorites with one click
+
+#### Bulk Operations
+- **Mass Updates**: Update metadata for multiple documents simultaneously
+- **Bulk Sharing**: Share multiple documents with a user at once
+- **Time Savings**: Efficient operations for managing large document collections
+
+#### Export & Backup
+- **JSON Export**: Export document metadata in JSON format
+- **ZIP Archive**: Download selected documents in a compressed archive
+- **CSV Export**: Export metadata to spreadsheet format for analysis
+- **Backup**: Create backups of important documents and their metadata
+
 ## API Documentation
 
 Once the backend is running, visit http://localhost:8000/docs for interactive API documentation.
 
-### Key Endpoints
+### Core Endpoints
 
+#### Authentication
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login and get access token
+- `GET /api/auth/me` - Get current user information
+
+#### Document Management
 - `POST /api/documents/upload` - Upload a document
-- `GET /api/documents/` - List documents
+- `GET /api/documents/` - List documents (with pagination)
 - `GET /api/documents/{id}` - Get a specific document
-- `GET /api/documents/{id}/preview` - Preview document content
+- `PUT /api/documents/{id}` - Update document metadata
 - `DELETE /api/documents/{id}` - Delete a document
+- `GET /api/documents/{id}/preview` - Preview document content
+- `GET /api/documents/tags/all` - List all available tags
+
+#### Search
 - `POST /api/search/semantic` - Perform semantic search
 - `POST /api/search/rag` - Perform RAG query
+
+### Advanced Feature Endpoints ✨
+
+#### Version Management
+- `GET /api/documents/{id}/versions` - Get version history for a document
+- `POST /api/documents/{id}/versions/{version_id}/rollback` - Rollback to specific version
+
+#### Sharing & Permissions
+- `POST /api/documents/{id}/share` - Share document with a user
+- `GET /api/documents/{id}/shares` - List all shares for a document
+- `DELETE /api/documents/shares/{share_id}` - Remove a document share
+- `GET /api/documents/shared-with-me` - Get documents shared with current user
+
+#### Analytics
+- `POST /api/documents/{id}/analytics/view` - Track a document view
+- `POST /api/documents/{id}/analytics/download` - Track a document download
+- `GET /api/documents/{id}/analytics` - Get analytics for a document
+- `GET /api/documents/analytics/popular` - Get most popular documents
+
+#### Favorites
+- `POST /api/documents/{id}/favorite` - Add document to favorites
+- `DELETE /api/documents/{id}/favorite` - Remove document from favorites
+- `GET /api/documents/favorites` - Get user's favorite documents
+
+#### Bulk Operations
+- `POST /api/documents/bulk/update` - Bulk update document metadata
+- `POST /api/documents/bulk/share` - Bulk share documents with a user
+
+#### Export
+- `POST /api/documents/export/json` - Export documents as JSON
+- `POST /api/documents/export/zip` - Export documents as ZIP archive
+- `POST /api/documents/export/csv` - Export document metadata as CSV
 
 ## Configuration
 
@@ -376,9 +516,13 @@ See [DOCKER_OPTIMIZATION.md](DOCKER_OPTIMIZATION.md) for details on the optimiza
 - JWT-based authentication with expiring tokens
 - Password hashing using bcrypt
 - Access control for documents (public/private)
+- Password hashing using bcrypt
+- Access control for documents (public/private/shared)
+- User-specific permissions (view, edit, admin)
 - Input validation and sanitization
 - File type restrictions (PDF and DOCX only)
 - File size limits
+- Audit logging through version history and analytics
 
 ## Limitations and Future Enhancements
 
@@ -386,18 +530,29 @@ See [DOCKER_OPTIMIZATION.md](DOCKER_OPTIMIZATION.md) for details on the optimiza
 - Basic RAG implementation (can be enhanced with LLM integration)
 - SQLite database (suitable for development, consider PostgreSQL for production)
 - Local file storage (consider cloud storage for production)
+- Frontend UI for advanced features pending implementation
+
+### Completed Features ✅
+- [x] Document preview
+- [x] Advanced access control with user-specific permissions
+- [x] Document versioning with rollback
+- [x] Collaborative features (sharing and permissions)
+- [x] Export functionality (JSON, ZIP, CSV)
+- [x] Analytics and usage statistics
+- [x] Favorites/bookmarking system
+- [x] Bulk operations
 
 ### Planned Enhancements
 - [ ] Integration with OpenAI GPT for advanced RAG
 - [ ] More document formats (TXT, MD, etc.)
-- [ ] Advanced access control (user groups, permissions)
-- [ ] Document versioning
-- [ ] Collaborative features
+- [ ] User groups and team-based permissions
 - [ ] Full-text search alongside vector search
-- [x] Document preview
 - [ ] Batch upload
-- [ ] Export functionality
-- [ ] Analytics and usage statistics
+- [ ] Document comparison between versions
+- [ ] Advanced analytics dashboard with charts
+- [ ] Email notifications for shares and updates
+- [ ] Document templates
+- [ ] Workflow automation
 
 ## Contributing
 
