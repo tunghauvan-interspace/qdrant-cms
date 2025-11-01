@@ -99,13 +99,20 @@ export interface DocumentShare {
   };
 }
 
+export interface RecentView {
+  id: number;
+  action: string;
+  timestamp: string;
+  user_id?: number;
+}
+
 export interface DocumentStats {
   document_id: number;
   total_views: number;
   total_downloads: number;
   total_search_hits: number;
   unique_viewers: number;
-  recent_views: any[];
+  recent_views: RecentView[];
 }
 
 export interface DocumentFavorite {

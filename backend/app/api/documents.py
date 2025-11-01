@@ -509,10 +509,11 @@ async def share_document(
     await db.commit()
     
     # Reload with user data
+    from app.models.models import DocumentShare as DocumentShareModel
     result = await db.execute(
-        select(type(share))
-        .options(selectinload(type(share).user))
-        .where(type(share).id == share.id)
+        select(DocumentShareModel)
+        .options(selectinload(DocumentShareModel.user))
+        .where(DocumentShareModel.id == share.id)
     )
     share = result.scalar_one()
     
