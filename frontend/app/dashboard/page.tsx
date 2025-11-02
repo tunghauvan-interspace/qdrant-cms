@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [uploadDescription, setUploadDescription] = useState('');
   const [uploadTags, setUploadTags] = useState('');
   const [uploadIsPublic, setUploadIsPublic] = useState('private');
+  const [uploadUseOCR, setUploadUseOCR] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   
@@ -146,7 +147,7 @@ export default function Dashboard() {
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 200);
 
-      await uploadDocument(uploadFile, uploadDescription, uploadTags, uploadIsPublic);
+      await uploadDocument(uploadFile, uploadDescription, uploadTags, uploadIsPublic, uploadUseOCR);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -155,6 +156,7 @@ export default function Dashboard() {
       setUploadDescription('');
       setUploadTags('');
       setUploadIsPublic('private');
+      setUploadUseOCR(false);
       await loadDocuments();
       showToast('success', 'Document uploaded and indexed successfully');
       setActiveTab('documents');
@@ -1166,7 +1168,7 @@ export default function Dashboard() {
                               id="file-upload"
                               name="file-upload"
                               type="file"
-                              accept=".pdf,.docx,.doc"
+                              accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
                               onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
                               className="sr-only"
                               required
@@ -1174,7 +1176,7 @@ export default function Dashboard() {
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500">PDF or DOCX up to 50MB</p>
+                        <p className="text-xs text-gray-500">PDF, DOCX, or images (PNG, JPG) up to 50MB</p>
                         {uploadFile && !uploadLoading && (
                           <p className="text-sm font-medium text-indigo-600 mt-2 flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1251,6 +1253,27 @@ export default function Dashboard() {
                     </select>
                   </div>
 
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="use-ocr"
+                        name="use-ocr"
+                        type="checkbox"
+                        checked={uploadUseOCR}
+                        onChange={(e) => setUploadUseOCR(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                      />
+                    </div>
+                    <div className="ml-3">
+                      <label htmlFor="use-ocr" className="text-sm font-medium text-gray-700">
+                        Enable OCR (Optical Character Recognition)
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Use OCR to extract text from scanned PDFs or images (PNG, JPG). This may take longer to process.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex gap-3">
                     <button
                       type="submit"
@@ -1278,6 +1301,7 @@ export default function Dashboard() {
                         setUploadDescription('');
                         setUploadTags('');
                         setUploadError('');
+                        setUploadUseOCR(false);
                       }}
                       className="btn btn-secondary px-6"
                     >

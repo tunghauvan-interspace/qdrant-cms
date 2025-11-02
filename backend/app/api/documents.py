@@ -37,16 +37,17 @@ async def upload_document(
     description: Optional[str] = Form(None),
     tags: Optional[str] = Form(None),
     is_public: str = Form("private"),
+    use_ocr: bool = Form(False),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Upload a new document"""
+    """Upload a new document with optional OCR support"""
     # Validate file type
     file_ext = file.filename.split(".")[-1].lower()
-    if file_ext not in ["pdf", "docx", "doc"]:
+    if file_ext not in ["pdf", "docx", "doc", "png", "jpg", "jpeg"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF and DOCX files are supported"
+            detail="Only PDF, DOCX, and image files (PNG, JPG, JPEG) are supported"
         )
     
     # Read file content
@@ -101,7 +102,7 @@ async def upload_document(
     
     # Process document and create chunks
     try:
-        text = document_processor.process_document(file_content, file_ext)
+        text = document_processor.process_document(file_content, file_ext, use_ocr=use_ocr)
         chunks = document_processor.chunk_text(text)
         
         # Store chunks in Qdrant and database

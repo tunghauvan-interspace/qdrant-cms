@@ -1,8 +1,12 @@
 from pypdf import PdfReader
 from docx import Document as DocxDocument
 from app.utils.text_splitter import RecursiveCharacterTextSplitter
+from app.services.ocr_service import ocr_service
 from typing import List
 import io
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentProcessor:
@@ -13,8 +17,19 @@ class DocumentProcessor:
             length_function=len,
         )
     
-    def extract_text_from_pdf(self, file_content: bytes) -> str:
-        """Extract text from PDF file"""
+    def extract_text_from_pdf(self, file_content: bytes, use_ocr: bool = False) -> str:
+        """Extract text from PDF file, optionally using OCR for scanned documents"""
+        # If OCR is requested or PDF is scanned, use OCR
+        if use_ocr:
+            # Check if it's actually a scanned PDF
+            is_scanned = ocr_service.check_if_pdf_is_scanned(file_content)
+            if is_scanned:
+                logger.info("PDF appears to be scanned, using OCR")
+                return ocr_service.extract_text_from_scanned_pdf(file_content)
+            else:
+                logger.info("PDF has extractable text, using standard extraction")
+        
+        # Standard text extraction
         pdf_file = io.BytesIO(file_content)
         reader = PdfReader(pdf_file)
         
@@ -35,12 +50,18 @@ class DocumentProcessor:
         
         return text
     
-    def process_document(self, file_content: bytes, file_type: str) -> str:
+    def extract_text_from_image(self, file_content: bytes) -> str:
+        """Extract text from image file using OCR"""
+        return ocr_service.extract_text_from_image(file_content)
+    
+    def process_document(self, file_content: bytes, file_type: str, use_ocr: bool = False) -> str:
         """Process document and extract text based on file type"""
         if file_type == "pdf":
-            return self.extract_text_from_pdf(file_content)
+            return self.extract_text_from_pdf(file_content, use_ocr=use_ocr)
         elif file_type in ["docx", "doc"]:
             return self.extract_text_from_docx(file_content)
+        elif file_type in ["png", "jpg", "jpeg"]:
+            return self.extract_text_from_image(file_content)
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
     
