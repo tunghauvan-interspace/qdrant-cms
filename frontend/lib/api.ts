@@ -20,12 +20,6 @@ export interface LoginData {
   password: string;
 }
 
-export interface LoginRequest {
-  username: string;
-  password: string;
-  remember_me?: boolean;
-}
-
 export interface RegisterData {
   username: string;
   email: string;
