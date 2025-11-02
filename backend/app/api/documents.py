@@ -266,12 +266,14 @@ async def list_tags(
 @router.get("/{document_id}/preview", response_model=DocumentPreviewResponse)
 async def preview_document(
     document_id: int,
+    highlight_chunks: Optional[str] = None,  # Comma-separated list of chunk IDs to highlight
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get a preview of document content"""
+    """Get a preview of document content with optional chunk highlighting"""
     result = await db.execute(
         select(Document)
+        .options(selectinload(Document.chunks))
         .where(Document.id == document_id)
     )
     document = result.scalar_one_or_none()
@@ -297,12 +299,38 @@ async def preview_document(
         # Extract text from document
         text = document_processor.process_document(file_content, document.file_type)
         
+        # Build chunk information with positions in the text
+        chunks_info = []
+        highlight_chunk_ids = set()
+        if highlight_chunks:
+            highlight_chunk_ids = set(int(cid) for cid in highlight_chunks.split(",") if cid.strip().isdigit())
+        
+        # Sort chunks by index
+        sorted_chunks = sorted(document.chunks, key=lambda c: c.chunk_index)
+        
+        current_position = 0
+        for chunk in sorted_chunks:
+            # Find the chunk content in the full text
+            chunk_start = text.find(chunk.content, current_position)
+            if chunk_start >= 0:
+                chunk_end = chunk_start + len(chunk.content)
+                chunks_info.append({
+                    "chunk_id": chunk.id,
+                    "chunk_index": chunk.chunk_index,
+                    "start": chunk_start,
+                    "end": chunk_end,
+                    "content": chunk.content,
+                    "highlighted": chunk.id in highlight_chunk_ids
+                })
+                current_position = chunk_end
+        
         return DocumentPreviewResponse(
             document_id=document.id,
             original_filename=document.original_filename,
             file_type=document.file_type,
             content=text,
-            preview_length=len(text)
+            preview_length=len(text),
+            chunks=chunks_info
         )
     except Exception as e:
         raise HTTPException(
