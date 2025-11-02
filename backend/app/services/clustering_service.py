@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
+import logging
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 from collections import Counter, defaultdict
@@ -13,17 +14,22 @@ from app.schemas.schemas import (
     ClusterSummary, DocumentResponse
 )
 
+# Set up logging
+logger = logging.getLogger(__name__)
+
 try:
     import hdbscan
     HDBSCAN_AVAILABLE = True
 except ImportError:
     HDBSCAN_AVAILABLE = False
+    logger.warning("HDBSCAN not available. Install with: pip install hdbscan")
 
 try:
     import umap
     UMAP_AVAILABLE = True
 except ImportError:
     UMAP_AVAILABLE = False
+    logger.warning("UMAP not available. Install with: pip install umap-learn")
 
 
 class ClusteringService:
@@ -80,7 +86,7 @@ class ClusteringService:
                         if vector is not None:
                             chunk_embeddings.append(vector)
                     except Exception as e:
-                        print(f"Error retrieving vector for chunk {chunk.id}: {e}")
+                        logger.error(f"Error retrieving vector for chunk {chunk.id}: {e}")
                         continue
                 
                 if chunk_embeddings:
@@ -111,7 +117,7 @@ class ClusteringService:
                                 'chunk_content': chunk.content[:200]  # Preview
                             })
                     except Exception as e:
-                        print(f"Error retrieving vector for chunk {chunk.id}: {e}")
+                        logger.error(f"Error retrieving vector for chunk {chunk.id}: {e}")
                         continue
         
         if len(embeddings) < 2:
@@ -203,7 +209,7 @@ class ClusteringService:
                     vector = vector_data
                 return np.array(vector)
         except Exception as e:
-            print(f"Error retrieving vector {point_id}: {e}")
+            logger.error(f"Error retrieving vector {point_id}: {e}")
         return None
     
     def _kmeans_clustering(self, embeddings: np.ndarray, n_clusters: int) -> np.ndarray:
@@ -242,7 +248,8 @@ class ClusteringService:
     def _tsne_reduction(self, embeddings: np.ndarray) -> np.ndarray:
         """Reduce dimensionality using t-SNE"""
         n_samples = len(embeddings)
-        perplexity = min(30, n_samples - 1)
+        # Ensure perplexity is at least 1 and at most 30 (or n_samples - 1)
+        perplexity = max(1, min(30, n_samples - 1))
         
         tsne = TSNE(
             n_components=2,
