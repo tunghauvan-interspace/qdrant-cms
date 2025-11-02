@@ -4,8 +4,11 @@ import path from 'path';
 
 test.describe('Search UI Screenshot Demo', () => {
   test('demonstrate search highlighting with hover tooltips', async () => {
+    // Use environment variable to control headless mode (default: true)
+    const headless = process.env.HEADLESS !== 'false';
+    
     // Launch browser
-    const browser = await chromium.launch({ headless: false });
+    const browser = await chromium.launch({ headless });
     const context = await browser.newContext({
       viewport: { width: 1920, height: 1080 },
       deviceScaleFactor: 1,
@@ -114,8 +117,6 @@ test.describe('Search UI Screenshot Demo', () => {
     }
     
     console.log('\nAll screenshots saved to /tmp/');
-    console.log('Keeping browser open for 10 seconds for manual inspection...');
-    await page.waitForTimeout(10000);
     
     await browser.close();
   });

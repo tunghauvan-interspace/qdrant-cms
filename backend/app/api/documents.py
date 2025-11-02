@@ -316,8 +316,12 @@ async def preview_document(
                         chunk_id_str, score_str = pair.split(":")
                         chunk_id = int(chunk_id_str.strip())
                         score = float(score_str.strip())
-                        chunk_score_map[chunk_id] = score
-                    except (ValueError, IndexError):
+                        # Validate score is in expected range
+                        if 0 <= score <= 1:
+                            chunk_score_map[chunk_id] = score
+                    except (ValueError, IndexError) as e:
+                        # Log invalid entries for debugging
+                        print(f"Warning: Invalid chunk score format '{pair}': {e}")
                         pass  # Skip invalid entries
         
         # Sort chunks by index

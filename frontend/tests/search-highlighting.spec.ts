@@ -36,7 +36,7 @@ test.describe('Search Document UI Improvements', () => {
     // Wait for search results
     await page.waitForSelector('.card:has-text("Found")', { timeout: 10000 });
     
-    // Get all document cards
+    // Check for documents
     const documentCards = await page.locator('.card').filter({ hasText: 'matching' }).all();
     
     // Verify we have unique documents (not multiple entries for same document)
@@ -53,8 +53,6 @@ test.describe('Search Document UI Improvements', () => {
           filenames.add(filename);
         }
       }
-      
-      console.log(`✓ Found ${filenames.size} unique documents`);
     }
   });
 
@@ -82,7 +80,7 @@ test.describe('Search Document UI Improvements', () => {
       const highlights = await page.locator('mark.bg-yellow-200').all();
       
       if (highlights.length > 0) {
-        console.log(`✓ Found ${highlights.length} highlighted sections`);
+        // Found highlighted sections
         
         // Test hover on first highlighted section
         const firstHighlight = highlights[0];
@@ -98,7 +96,6 @@ test.describe('Search Document UI Improvements', () => {
         
         if (await tooltip.isVisible()) {
           const tooltipText = await tooltip.textContent();
-          console.log(`✓ Tooltip displayed: "${tooltipText}"`);
           
           // Verify tooltip contains percentage
           expect(tooltipText).toMatch(/\d+\.?\d*%\s*match/);
@@ -107,7 +104,6 @@ test.describe('Search Document UI Improvements', () => {
         // Check accessibility attributes
         const ariaLabel = await firstHighlight.getAttribute('aria-label');
         expect(ariaLabel).toBeTruthy();
-        console.log(`✓ Accessibility label: "${ariaLabel}"`);
       }
       
       // Close the modal
@@ -131,7 +127,6 @@ test.describe('Search Document UI Improvements', () => {
     
     if (await sectionsBadge.isVisible()) {
       const badgeText = await sectionsBadge.textContent();
-      console.log(`✓ Multiple sections badge found: "${badgeText}"`);
       expect(badgeText).toMatch(/\d+\s*matching\s*sections?/);
     }
   });
@@ -152,7 +147,6 @@ test.describe('Search Document UI Improvements', () => {
     
     if (await relevanceScore.isVisible()) {
       const scoreText = await relevanceScore.textContent();
-      console.log(`✓ Relevance score displayed: "${scoreText}"`);
       expect(scoreText).toMatch(/Relevance:\s*\d+\.?\d*%/);
     }
   });

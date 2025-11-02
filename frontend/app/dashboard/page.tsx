@@ -369,6 +369,14 @@ export default function Dashboard() {
     setOpenDropdownId(openDropdownId === docId ? null : docId);
   };
 
+  // Helper function to safely convert score to percentage
+  const scoreToPercent = (score: number | undefined): string | null => {
+    if (score === undefined || score < 0 || score > 1) {
+      return null;
+    }
+    return (score * 100).toFixed(1);
+  };
+
   // Helper function to render content with highlighted chunks and hover tooltips
   const renderHighlightedContent = (content: string, chunks: any[]) => {
     if (!chunks || chunks.length === 0) {
@@ -391,7 +399,7 @@ export default function Dashboard() {
       
       // Add the chunk with highlighting if it's marked as highlighted
       if (chunk.highlighted) {
-        const matchPercent = chunk.score ? (chunk.score * 100).toFixed(1) : null;
+        const matchPercent = scoreToPercent(chunk.score);
         
         elements.push(
           <mark 
