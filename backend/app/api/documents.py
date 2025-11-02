@@ -7,6 +7,7 @@ from typing import List, Optional
 import os
 import uuid
 import json
+import logging
 from database import get_db
 from app.models.models import Document, Tag, DocumentChunk, User
 from app.schemas.schemas import (
@@ -27,6 +28,7 @@ from config import settings
 import io
 
 router = APIRouter(prefix="/api/documents", tags=["Documents"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/upload", response_model=DocumentResponse)
@@ -319,9 +321,11 @@ async def preview_document(
                         # Validate score is in expected range
                         if 0 <= score <= 1:
                             chunk_score_map[chunk_id] = score
+                        else:
+                            logger.warning(f"Chunk score out of range (0-1): chunk_id={chunk_id}, score={score}")
                     except (ValueError, IndexError) as e:
                         # Log invalid entries for debugging
-                        print(f"Warning: Invalid chunk score format '{pair}': {e}")
+                        logger.warning(f"Invalid chunk score format '{pair}': {e}")
                         pass  # Skip invalid entries
         
         # Sort chunks by index
