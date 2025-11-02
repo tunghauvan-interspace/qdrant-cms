@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getCurrentUser,
@@ -53,11 +53,7 @@ export default function ClustersPage() {
   // UI state
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
@@ -73,7 +69,11 @@ export default function ClustersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToastMessage({ type, message });
@@ -377,7 +377,7 @@ export default function ClustersPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Clusters Generated</h3>
             <p className="text-gray-600 mb-6">
-              Configure the clustering parameters above and click "Generate Clusters" to visualize your document topics.
+              Configure the clustering parameters above and click &quot;Generate Clusters&quot; to visualize your document topics.
             </p>
           </div>
         )}
