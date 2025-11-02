@@ -47,6 +47,36 @@ test.describe('Document Edit Feature', () => {
     await page.waitForLoadState('networkidle');
   });
 
+  test('should display primary action buttons for documents', async ({ page }) => {
+    // Wait for document list to load
+    await expect(page.getByText('test-document.pdf')).toBeVisible();
+    
+    // Check for View button (eye icon)
+    const viewButton = page.getByRole('button', { name: /view test-document.pdf/i });
+    await expect(viewButton).toBeVisible();
+    
+    // Check for Edit button (pencil icon)
+    const editButton = page.getByRole('button', { name: /edit test-document.pdf/i });
+    await expect(editButton).toBeVisible();
+    
+    // Check for More Actions button (three dots)
+    const moreButton = page.getByRole('button', { name: /more actions/i });
+    await expect(moreButton).toBeVisible();
+  });
+
+  test('should open dropdown menu when more actions clicked', async ({ page }) => {
+    // Wait for document list to load
+    await expect(page.getByText('test-document.pdf')).toBeVisible();
+    
+    // Click more actions button
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    
+    // Check if dropdown menu is displayed
+    await expect(page.getByRole('button', { name: /version history/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /copy filename/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /delete/i })).toBeVisible();
+  });
+
   test('should display edit button for documents', async ({ page }) => {
     // Wait for document list to load
     await expect(page.getByText('test-document.pdf')).toBeVisible();
@@ -63,6 +93,14 @@ test.describe('Document Edit Feature', () => {
     // Check if modal is displayed
     await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
     await expect(page.getByText('test-document.pdf')).toBeVisible();
+  });
+
+  test('should show history button in edit modal header', async ({ page }) => {
+    // Click edit button
+    await page.getByRole('button', { name: /edit test-document.pdf/i }).click();
+    
+    // Check if History button is visible in modal header
+    await expect(page.getByRole('button', { name: /history/i })).toBeVisible();
   });
 
   test('should pre-fill form with document data', async ({ page }) => {
@@ -228,16 +266,18 @@ test.describe('Version History Feature', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display version history button', async ({ page }) => {
+  test('should display version history in dropdown menu', async ({ page }) => {
     // Wait for document to load
     await expect(page.getByText('versioned-document.pdf')).toBeVisible();
     
-    // Check for version history button
-    const versionButton = page.getByRole('button', { name: /view versions of versioned-document.pdf/i });
-    await expect(versionButton).toBeVisible();
+    // Open dropdown menu
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    
+    // Check for version history button in dropdown
+    await expect(page.getByRole('button', { name: /version history/i })).toBeVisible();
   });
 
-  test('should open version history modal', async ({ page }) => {
+  test('should open version history modal from dropdown', async ({ page }) => {
     // Mock version history API
     await page.route('**/api/documents/1/versions', async (route) => {
       await route.fulfill({
@@ -281,8 +321,9 @@ test.describe('Version History Feature', () => {
       });
     });
     
-    // Click version history button
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    // Open dropdown and click version history
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Check if modal is displayed
     await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible();
@@ -322,8 +363,9 @@ test.describe('Version History Feature', () => {
       });
     });
     
-    // Open version history
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    // Open dropdown and click version history
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Wait for versions to load
     await expect(page.getByText('Version 2')).toBeVisible();
@@ -357,7 +399,8 @@ test.describe('Version History Feature', () => {
     });
     
     // Open version history
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Check for rollback button
     await expect(page.getByRole('button', { name: /Rollback/i }).first()).toBeVisible();
@@ -375,7 +418,8 @@ test.describe('Version History Feature', () => {
     });
     
     // Open version history
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Check for loading spinner
     const spinner = page.locator('.animate-spin');
@@ -393,7 +437,8 @@ test.describe('Version History Feature', () => {
     });
     
     // Open version history
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Check for empty state message
     await expect(page.getByText('No version history available')).toBeVisible();
@@ -410,7 +455,8 @@ test.describe('Version History Feature', () => {
     });
     
     // Open version history
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Verify modal is open
     await expect(page.getByRole('heading', { name: 'Version History' })).toBeVisible();
@@ -471,7 +517,8 @@ test.describe('Version History Feature', () => {
     });
     
     // Open version history
-    await page.getByRole('button', { name: /view versions of versioned-document.pdf/i }).click();
+    await page.getByRole('button', { name: /more actions/i }).first().click();
+    await page.getByRole('button', { name: /version history/i }).click();
     
     // Handle confirmation dialog
     page.on('dialog', dialog => dialog.accept());
