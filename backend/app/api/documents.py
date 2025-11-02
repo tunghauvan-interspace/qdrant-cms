@@ -7,6 +7,7 @@ from typing import List, Optional
 import os
 import uuid
 import json
+import logging
 from database import get_db
 from app.models.models import Document, Tag, DocumentChunk, User
 from app.schemas.schemas import (
@@ -27,6 +28,7 @@ from config import settings
 import io
 
 router = APIRouter(prefix="/api/documents", tags=["Documents"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/upload", response_model=DocumentResponse)
@@ -267,10 +269,11 @@ async def list_tags(
 async def preview_document(
     document_id: int,
     highlight_chunks: Optional[str] = None,  # Comma-separated list of chunk IDs to highlight
+    chunk_scores: Optional[str] = None,  # Comma-separated list of chunk scores (format: "chunk_id:score,chunk_id:score")
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get a preview of document content with optional chunk highlighting"""
+    """Get a preview of document content with optional chunk highlighting and scores"""
     result = await db.execute(
         select(Document)
         .options(selectinload(Document.chunks))
@@ -302,8 +305,28 @@ async def preview_document(
         # Build chunk information with positions in the text
         chunks_info = []
         highlight_chunk_ids = set()
+        chunk_score_map = {}  # Map of chunk_id -> score
+        
         if highlight_chunks:
             highlight_chunk_ids = set(int(cid) for cid in highlight_chunks.split(",") if cid.strip().isdigit())
+        
+        # Parse chunk scores if provided (format: "chunk_id:score,chunk_id:score")
+        if chunk_scores:
+            for pair in chunk_scores.split(","):
+                if ":" in pair:
+                    try:
+                        chunk_id_str, score_str = pair.split(":")
+                        chunk_id = int(chunk_id_str.strip())
+                        score = float(score_str.strip())
+                        # Validate score is in expected range
+                        if 0 <= score <= 1:
+                            chunk_score_map[chunk_id] = score
+                        else:
+                            logger.warning(f"Chunk score out of range (0-1): chunk_id={chunk_id}, score={score}")
+                    except (ValueError, IndexError) as e:
+                        # Log invalid entries for debugging
+                        logger.warning(f"Invalid chunk score format '{pair}': {e}")
+                        pass  # Skip invalid entries
         
         # Sort chunks by index
         sorted_chunks = sorted(document.chunks, key=lambda c: c.chunk_index)
@@ -314,14 +337,20 @@ async def preview_document(
             chunk_start = text.find(chunk.content, current_position)
             if chunk_start >= 0:
                 chunk_end = chunk_start + len(chunk.content)
-                chunks_info.append({
+                chunk_info = {
                     "chunk_id": chunk.id,
                     "chunk_index": chunk.chunk_index,
                     "start": chunk_start,
                     "end": chunk_end,
                     "content": chunk.content,
                     "highlighted": chunk.id in highlight_chunk_ids
-                })
+                }
+                
+                # Add score if available
+                if chunk.id in chunk_score_map:
+                    chunk_info["score"] = chunk_score_map[chunk.id]
+                
+                chunks_info.append(chunk_info)
                 current_position = chunk_end
         
         return DocumentPreviewResponse(
