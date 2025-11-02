@@ -5,16 +5,20 @@ test.describe('Login Page', () => {
     await page.goto('/login');
 
     // Check page title
-    await expect(page.getByRole('heading', { name: 'Qdrant CMS/DMS' })).toBeVisible();
-    await expect(page.getByText('Sign in to your account')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Qdrant CMS' })).toBeVisible();
+    await expect(page.getByText('Sign in to manage your documents')).toBeVisible();
 
     // Check form fields
-    await expect(page.getByPlaceholder('Username')).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
+    await expect(page.getByPlaceholder('Enter your username')).toBeVisible();
+    await expect(page.getByPlaceholder('Enter your password')).toBeVisible();
+
+    // Check Remember Me checkbox
+    await expect(page.getByRole('checkbox', { name: 'Remember me' })).toBeVisible();
+    await expect(page.getByText('Remember me for 7 days')).toBeVisible();
 
     // Check buttons
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Don't have an account/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Create an account/i })).toBeVisible();
   });
 
   test('should show validation errors for empty fields', async ({ page }) => {
@@ -24,10 +28,10 @@ test.describe('Login Page', () => {
     await page.getByRole('button', { name: 'Sign in' }).click();
 
     // HTML5 validation should prevent submission
-    const usernameInput = page.getByPlaceholder('Username');
+    const usernameInput = page.getByPlaceholder('Enter your username');
     await expect(usernameInput).toHaveAttribute('required', '');
     
-    const passwordInput = page.getByPlaceholder('Password');
+    const passwordInput = page.getByPlaceholder('Enter your password');
     await expect(passwordInput).toHaveAttribute('required', '');
   });
 
@@ -35,7 +39,7 @@ test.describe('Login Page', () => {
     await page.goto('/login');
 
     // Click on register link
-    await page.getByRole('button', { name: /Don't have an account/i }).click();
+    await page.getByRole('button', { name: /Create an account/i }).click();
 
     // Should navigate to register page
     await expect(page).toHaveURL('/register');
@@ -45,8 +49,8 @@ test.describe('Login Page', () => {
     await page.goto('/login');
 
     // Fill in credentials
-    await page.getByPlaceholder('Username').fill('testuser');
-    await page.getByPlaceholder('Password').fill('testpassword');
+    await page.getByPlaceholder('Enter your username').fill('testuser');
+    await page.getByPlaceholder('Enter your password').fill('testpassword');
 
     // Submit form
     await page.getByRole('button', { name: 'Sign in' }).click();
@@ -65,8 +69,42 @@ test.describe('Login Page', () => {
     const formContainer = page.locator('.max-w-md');
     await expect(formContainer).toBeVisible();
 
-    // Check background color
-    const bgContainer = page.locator('.min-h-screen.bg-gray-50');
+    // Check background gradient
+    const bgContainer = page.locator('.min-h-screen.bg-gradient-to-br');
     await expect(bgContainer).toBeVisible();
+  });
+
+  test('should allow toggling Remember Me checkbox', async ({ page }) => {
+    await page.goto('/login');
+
+    const rememberMeCheckbox = page.getByRole('checkbox', { name: 'Remember me' });
+
+    // Checkbox should be unchecked by default
+    await expect(rememberMeCheckbox).not.toBeChecked();
+
+    // Click to check
+    await rememberMeCheckbox.click();
+    await expect(rememberMeCheckbox).toBeChecked();
+
+    // Click to uncheck
+    await rememberMeCheckbox.click();
+    await expect(rememberMeCheckbox).not.toBeChecked();
+  });
+
+  test('should have accessible Remember Me checkbox', async ({ page }) => {
+    await page.goto('/login');
+
+    const rememberMeCheckbox = page.getByRole('checkbox', { name: 'Remember me' });
+    const rememberMeLabel = page.locator('label[for="remember-me"]');
+
+    // Check accessibility attributes
+    await expect(rememberMeCheckbox).toHaveAttribute('id', 'remember-me');
+    await expect(rememberMeCheckbox).toHaveAttribute('aria-label', 'Remember me');
+    await expect(rememberMeLabel).toBeVisible();
+    await expect(rememberMeLabel).toContainText('Remember me for 7 days');
+
+    // Clicking label should toggle checkbox
+    await rememberMeLabel.click();
+    await expect(rememberMeCheckbox).toBeChecked();
   });
 });

@@ -10,6 +10,14 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
 - **Vector Search**: Semantic search powered by Qdrant
 - **RAG Support**: Retrieval-Augmented Generation for intelligent document queries
 - **User Authentication**: Secure JWT-based authentication
+- **Document Management**: 
+  - Tagging system
+  - Access control (public/private)
+  - Full CRUD operations
+  - Document preview with formatted content display
+- **User Authentication**: 
+  - Secure JWT-based authentication
+  - "Remember Me" option for persistent sessions (up to 7 days)
 - **Modern UI**: Clean, responsive interface built with Next.js and Tailwind CSS
 
 ### Document Management
@@ -347,6 +355,7 @@ DATABASE_URL=sqlite+aiosqlite:///./documents.db
 SECRET_KEY=your-secret-key-change-this-in-production
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+REMEMBER_ME_EXPIRE_DAYS=7
 
 # Application
 UPLOAD_DIR=./uploads
@@ -514,6 +523,10 @@ See [DOCKER_OPTIMIZATION.md](DOCKER_OPTIMIZATION.md) for details on the optimiza
 ## Security Considerations
 
 - JWT-based authentication with expiring tokens
+- "Remember Me" feature with configurable extended token expiration (default: 7 days)
+  - Users can opt-in for persistent sessions that survive browser restarts
+  - Tokens remain stateless and validate via JWT signature
+  - Extended tokens can be configured via `REMEMBER_ME_EXPIRE_DAYS` environment variable
 - Password hashing using bcrypt
 - Access control for documents (public/private)
 - Password hashing using bcrypt
