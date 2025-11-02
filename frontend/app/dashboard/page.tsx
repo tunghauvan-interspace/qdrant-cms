@@ -446,7 +446,7 @@ export default function Dashboard() {
           <mark 
             key={`chunk-${index}`}
             data-highlight-index={highlightIndex}
-            className={`${isCurrentHighlight ? 'bg-green-200 ring-2 ring-green-400' : 'bg-yellow-100'} hover:bg-yellow-200 px-1.5 py-0.5 rounded cursor-help transition-all relative inline-block group`}
+            className={`${isCurrentHighlight ? 'bg-green-200 ring-2 ring-green-400' : 'bg-yellow-100'} hover:bg-yellow-200 px-1.5 py-0.5 mb-4 rounded cursor-help transition-all relative inline-block group`}
             title={matchPercent ? `${matchPercent}% match` : 'Highlighted section'}
             role="mark"
             aria-label={matchPercent ? `Matching section with ${matchPercent}% relevance` : 'Matching section'}
@@ -1505,7 +1505,7 @@ export default function Dashboard() {
       {/* Preview Modal */}
       {showPreviewModal && previewData && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col animate-scale-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] flex flex-col animate-scale-in">
             {/* Sticky Modal Header - Enhanced */}
             <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-gray-200 shadow-sm">
               <div className="p-6">
@@ -1580,74 +1580,144 @@ export default function Dashboard() {
                   </button>
                 </div>
                 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2">
-                  {previewData.chunks && previewData.chunks.some(c => c.highlighted) && previewData.chunks.filter(c => c.highlighted).length > 1 && (
-                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => navigateHighlight('prev')}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white rounded transition-colors flex items-center gap-1"
-                        title="Previous match"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Prev
-                      </button>
-                      <span className="px-2 py-1.5 text-sm text-gray-600">
-                        {currentHighlightIndex + 1} / {previewData.chunks.filter(c => c.highlighted).length}
-                      </span>
-                      <button
-                        onClick={() => navigateHighlight('next')}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white rounded transition-colors flex items-center gap-1"
-                        title="Next match"
-                      >
-                        Next
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
+                {/* Action Buttons - Reorganized */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {previewData.chunks && previewData.chunks.some(c => c.highlighted) && previewData.chunks.filter(c => c.highlighted).length > 1 && (
+                      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => navigateHighlight('prev')}
+                          className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white rounded transition-colors flex items-center gap-1"
+                          title="Previous match"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                          Prev
+                        </button>
+                        <span className="px-2 py-1.5 text-sm text-gray-600">
+                          {currentHighlightIndex + 1} / {previewData.chunks.filter(c => c.highlighted).length}
+                        </span>
+                        <button
+                          onClick={() => navigateHighlight('next')}
+                          className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white rounded transition-colors flex items-center gap-1"
+                          title="Next match"
+                        >
+                          Next
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   
-                  <button
-                    onClick={downloadDocument}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download
-                  </button>
-                  
-                  {previewData.chunks && previewData.chunks.some(c => c.highlighted) && (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={copyMatchedText}
+                      onClick={downloadDocument}
                       className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      Copy Matched Text
+                      Download
                     </button>
-                  )}
+                    
+                    {previewData.chunks && previewData.chunks.some(c => c.highlighted) && (
+                      <button
+                        onClick={copyMatchedText}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Matched Text
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-              <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
-                {previewData.chunks && previewData.chunks.length > 0 ? (
-                  <div className="text-base text-gray-800 leading-relaxed font-['Inter','system-ui','Roboto',sans-serif] whitespace-pre-wrap" style={{ lineHeight: '1.75' }}>
-                    {renderHighlightedContent(previewData.content, previewData.chunks)}
-                  </div>
-                ) : (
-                  <pre className="whitespace-pre-wrap text-base text-gray-800 leading-relaxed font-['Inter','system-ui','Roboto',sans-serif]" style={{ lineHeight: '1.75' }}>
-                    {previewData.content}
-                  </pre>
-                )}
+            {/* Modal Body with Sidebar Layout */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Main Content Area */}
+              <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
+                  {previewData.chunks && previewData.chunks.length > 0 ? (
+                    <div className="text-base text-gray-800 leading-relaxed font-['Inter','system-ui','Roboto',sans-serif] whitespace-pre-wrap" style={{ lineHeight: '1.75' }}>
+                      {renderHighlightedContent(previewData.content, previewData.chunks)}
+                    </div>
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-base text-gray-800 leading-relaxed font-['Inter','system-ui','Roboto',sans-serif]" style={{ lineHeight: '1.75' }}>
+                      {previewData.content}
+                    </pre>
+                  )}
+                </div>
               </div>
+
+              {/* Right Sidebar - Match Navigation Panel */}
+              {previewData.chunks && previewData.chunks.some(c => c.highlighted) && (
+                <div className="w-72 border-l border-gray-200 bg-white overflow-y-auto flex-shrink-0">
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Matched Sections
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {previewData.chunks.filter(c => c.highlighted).length} sections found
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 space-y-2">
+                    {previewData.chunks
+                      .filter(c => c.highlighted)
+                      .map((chunk, idx) => {
+                        const matchPercent = scoreToPercent(chunk.score);
+                        const isActive = idx === currentHighlightIndex;
+                        const preview = previewData.content.substring(chunk.start, Math.min(chunk.end, chunk.start + 120));
+                        
+                        return (
+                          <button
+                            key={chunk.chunk_id}
+                            onClick={() => {
+                              setCurrentHighlightIndex(idx);
+                              const highlightElements = document.querySelectorAll('mark[data-highlight-index]');
+                              if (highlightElements[idx]) {
+                                highlightElements[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }}
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${
+                              isActive 
+                                ? 'bg-indigo-50 border-indigo-300 shadow-sm' 
+                                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <span className="text-xs font-semibold text-gray-900">
+                                Match #{idx + 1}
+                              </span>
+                              {matchPercent && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                  parseFloat(matchPercent) >= 80 ? 'bg-green-100 text-green-800' :
+                                  parseFloat(matchPercent) >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-orange-100 text-orange-800'
+                                }`}>
+                                  {matchPercent}%
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                              {preview}{preview.length >= 120 ? '...' : ''}
+                            </p>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
