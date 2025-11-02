@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-this-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    remember_me_expire_days: int = 7  # Extended expiration for "Remember Me"
     
     # Application Settings
     upload_dir: str = "./uploads"

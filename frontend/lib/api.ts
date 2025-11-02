@@ -20,6 +20,12 @@ export interface LoginData {
   password: string;
 }
 
+export interface LoginRequest {
+  username: string;
+  password: string;
+  remember_me?: boolean;
+}
+
 export interface RegisterData {
   username: string;
   email: string;
@@ -123,10 +129,11 @@ export interface DocumentFavorite {
 }
 
 // Auth APIs
-export const login = async (data: LoginData) => {
+export const login = async (data: LoginData, rememberMe: boolean = false) => {
   const formData = new FormData();
   formData.append('username', data.username);
   formData.append('password', data.password);
+  formData.append('remember_me', rememberMe.toString());
   const response = await api.post('/api/auth/login', formData);
   return response.data;
 };

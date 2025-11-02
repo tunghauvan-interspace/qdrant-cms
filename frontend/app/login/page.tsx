@@ -7,6 +7,7 @@ import { login } from '@/lib/api';
 export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({ username: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +17,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await login(formData);
+      const response = await login(formData, rememberMe);
       localStorage.setItem('token', response.access_token);
       router.push('/dashboard');
     } catch (err: any) {
@@ -96,6 +97,21 @@ export default function Login() {
                   aria-required="true"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                aria-label="Remember me"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+                Remember me for 7 days
+              </label>
             </div>
 
             <div>
