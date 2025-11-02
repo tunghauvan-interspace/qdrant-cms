@@ -633,6 +633,26 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
+          
+          {/* Clusters Link - Separate from main navigation */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => router.push('/clusters')}
+              className="w-full flex items-center p-3 rounded-lg transition-all group text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+              aria-label="Navigate to Clusters"
+              title={sidebarCollapsed ? 'Clusters' : ''}
+            >
+              <svg className={`w-5 h-5 ${sidebarCollapsed ? 'mx-auto' : 'mr-3'} flex-shrink-0 text-purple-600 group-hover:text-purple-700`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              {!sidebarCollapsed && (
+                <div className="text-left flex-1">
+                  <div className="text-sm font-medium">Clusters</div>
+                  <div className="text-xs mt-0.5 text-gray-500">Topic discovery</div>
+                </div>
+              )}
+            </button>
+          </div>
         </nav>
 
         {/* Sidebar Footer - User Info */}

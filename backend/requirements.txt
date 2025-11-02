@@ -19,3 +19,6 @@ sqlalchemy==2.0.23
 aiosqlite==0.19.0
 numpy==1.26.4
 email-validator==2.1.0
+umap-learn==0.5.5
+hdbscan
+requests==2.31.0

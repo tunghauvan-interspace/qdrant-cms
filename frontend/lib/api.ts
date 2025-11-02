@@ -356,4 +356,74 @@ export const ragSearch = async (query: string, topK: number = 3) => {
   return response.data;
 };
 
+// Clustering APIs
+export interface ClusterRequest {
+  algorithm: 'kmeans' | 'hdbscan';
+  n_clusters?: number;  // For k-means
+  min_cluster_size?: number;  // For HDBSCAN
+  reduction_method: 'umap' | 'tsne';
+  level: 'document' | 'chunk';
+}
+
+export interface ClusterPoint {
+  id: string;
+  x: number;
+  y: number;
+  cluster_id: number;
+  document_id: number;
+  filename: string;
+  chunk_index?: number;
+  chunk_content?: string;
+  description?: string;
+}
+
+export interface ClusterSummary {
+  cluster_id: number;
+  size: number;
+  representative_docs: Array<{
+    document_id: number;
+    filename: string;
+    description: string;
+    count: number;
+  }>;
+  keywords?: string[];
+  centroid?: number[];
+}
+
+export interface ClusterResult {
+  points: ClusterPoint[];
+  summaries: ClusterSummary[];
+  algorithm: string;
+  n_clusters: number;
+  reduction_method: string;
+  level: string;
+}
+
+export interface ClusterSearchQuery {
+  cluster_id: number;
+  query?: string;
+  limit: number;
+}
+
+export const generateClusters = async (request: ClusterRequest): Promise<ClusterResult> => {
+  const response = await api.post('/api/clustering/generate', request);
+  return response.data;
+};
+
+export const getClusterStats = async () => {
+  const response = await api.get('/api/clustering/stats');
+  return response.data;
+};
+
+export const searchWithinCluster = async (
+  searchQuery: ClusterSearchQuery,
+  clusterResult: ClusterResult
+): Promise<any[]> => {
+  const response = await api.post('/api/clustering/search', {
+    ...searchQuery,
+    cluster_result: clusterResult
+  });
+  return response.data;
+};
+
 export default api;
