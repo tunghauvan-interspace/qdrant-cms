@@ -18,6 +18,7 @@ import {
   SearchResult,
   RAGResponse,
   DocumentVersion,
+  ChunkInfo,
 } from '@/lib/api';
 
 export default function Dashboard() {
@@ -245,10 +246,10 @@ export default function Dashboard() {
     }
   };
 
-  const handlePreview = async (id: number) => {
+  const handlePreview = async (id: number, highlightChunks?: number[]) => {
     setPreviewLoading(true);
     try {
-      const preview = await previewDocument(id);
+      const preview = await previewDocument(id, highlightChunks);
       setPreviewData(preview);
       setShowPreviewModal(true);
     } catch (error) {
@@ -257,6 +258,12 @@ export default function Dashboard() {
     } finally {
       setPreviewLoading(false);
     }
+  };
+
+  const handlePreviewFromSearch = async (result: SearchResult) => {
+    // Extract chunk IDs from matching chunks
+    const chunkIds = result.matching_chunks?.map(c => c.chunk_id) || [];
+    await handlePreview(result.document_id, chunkIds);
   };
 
   const closePreviewModal = () => {
@@ -354,6 +361,55 @@ export default function Dashboard() {
 
   const toggleDropdown = (docId: number) => {
     setOpenDropdownId(openDropdownId === docId ? null : docId);
+  };
+
+  // Helper function to render content with highlighted chunks
+  const renderHighlightedContent = (content: string, chunks: any[]) => {
+    if (!chunks || chunks.length === 0) {
+      return content;
+    }
+
+    // Sort chunks by start position
+    const sortedChunks = [...chunks].sort((a, b) => a.start - b.start);
+    
+    const elements: JSX.Element[] = [];
+    let lastPos = 0;
+    
+    sortedChunks.forEach((chunk, index) => {
+      // Add text before the chunk
+      if (chunk.start > lastPos) {
+        elements.push(
+          <span key={`text-${index}`}>{content.substring(lastPos, chunk.start)}</span>
+        );
+      }
+      
+      // Add the chunk with highlighting if it's marked as highlighted
+      if (chunk.highlighted) {
+        elements.push(
+          <mark 
+            key={`chunk-${index}`}
+            className="bg-yellow-200 px-1 rounded"
+          >
+            {content.substring(chunk.start, chunk.end)}
+          </mark>
+        );
+      } else {
+        elements.push(
+          <span key={`chunk-${index}`}>{content.substring(chunk.start, chunk.end)}</span>
+        );
+      }
+      
+      lastPos = chunk.end;
+    });
+    
+    // Add remaining text after last chunk
+    if (lastPos < content.length) {
+      elements.push(
+        <span key="text-end">{content.substring(lastPos)}</span>
+      );
+    }
+    
+    return <>{elements}</>;
   };
 
 
@@ -1187,7 +1243,7 @@ export default function Dashboard() {
                 <div className="space-y-4 animate-slide-in-up">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Found {searchResults.length} {searchResults.length === 1 ? 'result' : 'results'}
+                      Found {searchResults.length} {searchResults.length === 1 ? 'document' : 'documents'}
                     </h3>
                     <button
                       onClick={() => {
@@ -1222,12 +1278,36 @@ export default function Dashboard() {
                                 style={{ width: `${result.score * 100}%` }}
                               ></div>
                             </span>
+                            {result.matching_chunks && result.matching_chunks.length > 1 && (
+                              <span className="badge bg-indigo-100 text-indigo-700 text-xs">
+                                {result.matching_chunks.length} matching sections
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg mb-3">
                         {result.chunk_content}
                       </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-1">
+                          {result.document.tags.slice(0, 3).map((tag) => (
+                            <span key={tag.id} className="badge bg-gray-100 text-gray-600 text-xs">
+                              #{tag.name}
+                            </span>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => handlePreviewFromSearch(result)}
+                          className="btn btn-sm btn-primary flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          View Document
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1385,18 +1465,29 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-4">
-                    <span className="badge bg-indigo-100 text-indigo-800">
+                    <span className="badge bg-indigo-100 text-indigo-700">
                       {previewData.file_type.toUpperCase()}
                     </span>
                     <span className="text-sm text-gray-600">
                       {previewData.preview_length.toLocaleString()} characters
                     </span>
+                    {previewData.chunks && previewData.chunks.some(c => c.highlighted) && (
+                      <span className="badge bg-yellow-100 text-yellow-800">
+                        {previewData.chunks.filter(c => c.highlighted).length} matching {previewData.chunks.filter(c => c.highlighted).length === 1 ? 'section' : 'sections'} highlighted
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed font-sans">
-                    {previewData.content}
-                  </pre>
+                  {previewData.chunks && previewData.chunks.length > 0 ? (
+                    <div className="text-sm text-gray-800 leading-relaxed font-sans whitespace-pre-wrap">
+                      {renderHighlightedContent(previewData.content, previewData.chunks)}
+                    </div>
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed font-sans">
+                      {previewData.content}
+                    </pre>
+                  )}
                 </div>
               </div>
             </div>

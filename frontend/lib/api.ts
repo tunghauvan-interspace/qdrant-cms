@@ -46,17 +46,34 @@ export interface Tag {
   name: string;
 }
 
+export interface ChunkMatch {
+  chunk_id: number;
+  chunk_index: number;
+  chunk_content: string;
+  score: number;
+}
+
 export interface SearchResult {
   document_id: number;
   filename: string;
   chunk_content: string;
   score: number;
   document: Document;
+  matching_chunks?: ChunkMatch[];
 }
 
 export interface RAGResponse {
   answer: string;
   sources: SearchResult[];
+}
+
+export interface ChunkInfo {
+  chunk_id: number;
+  chunk_index: number;
+  start: number;
+  end: number;
+  content: string;
+  highlighted: boolean;
 }
 
 export interface DocumentPreview {
@@ -65,6 +82,7 @@ export interface DocumentPreview {
   file_type: string;
   content: string;
   preview_length: number;
+  chunks?: ChunkInfo[];
 }
 
 export interface DocumentUpdate {
@@ -178,8 +196,12 @@ export const deleteDocument = async (id: number) => {
   return response.data;
 };
 
-export const previewDocument = async (id: number) => {
-  const response = await api.get(`/api/documents/${id}/preview`);
+export const previewDocument = async (id: number, highlightChunks?: number[]) => {
+  let url = `/api/documents/${id}/preview`;
+  if (highlightChunks && highlightChunks.length > 0) {
+    url += `?highlight_chunks=${highlightChunks.join(',')}`;
+  }
+  const response = await api.get(url);
   return response.data;
 };
 

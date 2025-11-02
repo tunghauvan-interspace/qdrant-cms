@@ -78,12 +78,20 @@ class SearchQuery(BaseModel):
     filters: Optional[dict] = None
 
 
+class ChunkMatch(BaseModel):
+    chunk_id: int
+    chunk_index: int
+    chunk_content: str
+    score: float
+
+
 class SearchResult(BaseModel):
     document_id: int
     filename: str
     chunk_content: str
     score: float
     document: DocumentResponse
+    matching_chunks: Optional[List[ChunkMatch]] = None
 
 
 class RAGQuery(BaseModel):
@@ -102,6 +110,7 @@ class DocumentPreviewResponse(BaseModel):
     file_type: str
     content: str
     preview_length: int
+    chunks: Optional[List[Dict[str, Any]]] = None  # List of chunks with their positions
 
 
 # Version schemas
