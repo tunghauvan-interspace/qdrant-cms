@@ -389,7 +389,6 @@ export default function Dashboard() {
           <mark 
             key={`chunk-${index}`}
             className="bg-yellow-200 px-1 rounded"
-            style={{ backgroundColor: '#fef08a' }}
           >
             {content.substring(chunk.start, chunk.end)}
           </mark>
@@ -1466,7 +1465,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-4">
-                    <span className="badge bg-indigo-100 text-indigo-800">
+                    <span className="badge bg-indigo-100 text-indigo-700">
                       {previewData.file_type.toUpperCase()}
                     </span>
                     <span className="text-sm text-gray-600">
