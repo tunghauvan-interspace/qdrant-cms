@@ -5,7 +5,8 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
 ## Features
 
 ### Core Features
-- **Document Upload**: Upload PDF and DOCX files
+- **Document Upload**: Upload PDF, DOCX files, and images (PNG, JPG, JPEG)
+- **OCR Support**: Extract text from scanned PDFs and images using Tesseract OCR
 - **Automatic Processing**: Documents are automatically chunked and embedded
 - **Vector Search**: Semantic search powered by Qdrant
 - **RAG Support**: Retrieval-Augmented Generation for intelligent document queries
@@ -28,6 +29,13 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
 - **Metadata Editing**: Update document descriptions, tags, and visibility settings
 
 ### Advanced Features ✨ NEW
+- **🔤 OCR (Optical Character Recognition)**:
+  - Extract text from scanned PDFs and images
+  - Support for PNG, JPG, JPEG image formats
+  - Tesseract OCR engine for accurate text recognition
+  - Automatic detection of scanned vs. text-based PDFs
+  - See [docs/OCR_Feature.md](docs/OCR_Feature.md) for details
+
 - **📝 Document Versioning**: 
   - Automatic version tracking for all document changes
   - View complete version history with timestamps

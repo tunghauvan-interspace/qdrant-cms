@@ -162,12 +162,13 @@ export const getCurrentUser = async () => {
 };
 
 // Document APIs
-export const uploadDocument = async (file: File, description: string, tags: string, isPublic: string) => {
+export const uploadDocument = async (file: File, description: string, tags: string, isPublic: string, useOCR: boolean = false) => {
   const formData = new FormData();
   formData.append('file', file);
   if (description) formData.append('description', description);
   if (tags) formData.append('tags', tags);
   formData.append('is_public', isPublic);
+  formData.append('use_ocr', useOCR.toString());
   
   const response = await api.post('/api/documents/upload', formData, {
     headers: {

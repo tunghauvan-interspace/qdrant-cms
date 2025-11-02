@@ -17,6 +17,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install runtime dependencies (Tesseract OCR and Poppler for PDF to image conversion)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy Python dependencies from builder
 COPY --from=builder /root/.local /root/.local
 
