@@ -112,12 +112,12 @@ docker compose up -d --build
 
 3. Create the admin account:
 ```bash
-docker compose exec backend python create_admin.py
+docker compose exec backend python scripts/admin/create_admin_api.py
 ```
 
 4. **Upgrade Database** (if upgrading from previous version):
 ```bash
-docker compose exec backend python migrate_database.py
+docker compose exec backend python scripts/database/migrate_database.py
 ```
 
 5. Access the application:
@@ -139,11 +139,11 @@ If you're upgrading from a previous version of Qdrant CMS, you need to run the d
 
 ```bash
 # Using Docker
-docker compose exec backend python migrate_database.py
+docker compose exec backend python scripts/database/migrate_database.py
 
 # Or locally
 cd backend
-python migrate_database.py
+python scripts/database/migrate_database.py
 ```
 
 This will:
@@ -389,7 +389,7 @@ The application includes a script to create an admin user account. This is essen
 After starting the services with Docker:
 
 ```bash
-docker compose exec backend python create_admin.py
+docker compose exec backend python scripts/admin/create_admin_api.py
 ```
 
 ### Custom Admin Credentials
@@ -400,7 +400,7 @@ You can customize the admin account by setting environment variables before runn
 export ADMIN_USERNAME=myadmin
 export ADMIN_EMAIL=admin@mydomain.com
 export ADMIN_PASSWORD=securepassword123
-docker compose exec backend python create_admin.py
+docker compose exec backend python scripts/admin/create_admin_api.py
 ```
 
 Or create a `.env` file in the backend directory with these variables.
@@ -413,45 +413,33 @@ The admin account has full access to:
 - System configuration
 - All CRUD operations on documents and users
 
-## Helper Scripts
+## Utility Scripts
 
-The project includes several utility scripts located in `backend/helper/` for maintenance and debugging purposes.
+The project includes several utility scripts located in `backend/scripts/` for maintenance and debugging purposes. See [backend/scripts/README.md](backend/scripts/README.md) for detailed documentation.
 
-### check_docs.py
+### Admin Scripts (`scripts/admin/`)
 
+#### `create_admin_api.py`
+Creates an admin user via the REST API. Requires the backend service to be running.
+
+#### `create_admin_direct.py`
+Creates an admin user directly in the database. Useful for initial setup.
+
+### Database Scripts (`scripts/database/`)
+
+#### `migrate_database.py`
+Database migration script for adding new features like versioning, sharing, analytics, and favorites.
+
+#### `check_docs.py`
 Lists all documents stored in the database.
 
-**Usage:**
-```bash
-cd backend
-python helper/check_docs.py
-```
+### Qdrant Scripts (`scripts/qdrant/`)
 
-**Output:** Displays the number of documents and their filenames with IDs.
-
-### recreate_collection.py
-
+#### `recreate_collection.py`
 Recreates the 'documents' collection in Qdrant. Useful for resetting the vector database.
 
-**Usage:**
-```bash
-cd backend
-python helper/recreate_collection.py
-```
-
-**Note:** This will delete all existing vectors in the 'documents' collection. Use with caution.
-
-### recreate_memory.py
-
+#### `recreate_memory.py`
 Recreates the 'memory' collection in Qdrant. Useful for resetting the memory vector database.
-
-**Usage:**
-```bash
-cd backend
-python helper/recreate_memory.py
-```
-
-**Note:** This will delete all existing vectors in the 'memory' collection. Use with caution.
 
 ## Production Deployment
 

@@ -279,7 +279,7 @@ class ClusteringService:
             cluster_indices = np.where(cluster_labels == label)[0]
             cluster_size = len(cluster_indices)
             
-            # Get representative documents (up to 3)
+            # Get all documents in this cluster
             cluster_metadata = [metadata[i] for i in cluster_indices]
             
             # Group by document_id to avoid duplicates
@@ -287,11 +287,11 @@ class ClusteringService:
             for meta in cluster_metadata:
                 docs_by_id[meta['document_id']].append(meta)
             
-            # Select up to 3 representative documents
-            representative_docs = []
-            for doc_id in list(docs_by_id.keys())[:3]:
+            # Include ALL documents in the cluster (not just representative ones)
+            all_docs = []
+            for doc_id in docs_by_id.keys():
                 doc_metas = docs_by_id[doc_id]
-                representative_docs.append({
+                all_docs.append({
                     'document_id': doc_id,
                     'filename': doc_metas[0]['filename'],
                     'description': doc_metas[0].get('description', ''),
@@ -302,13 +302,13 @@ class ClusteringService:
             cluster_embeddings = embeddings[cluster_indices]
             centroid = np.mean(cluster_embeddings, axis=0).tolist()
             
-            # Generate keywords (simple approach: most common words from chunks)
-            keywords = self._extract_keywords(cluster_metadata)
+            # Generate keywords with improved extraction
+            keywords = await self._extract_keywords(cluster_metadata, db)
             
             summary = ClusterSummary(
                 cluster_id=int(label),
                 size=cluster_size,
-                representative_docs=representative_docs,
+                representative_docs=all_docs,
                 keywords=keywords,
                 centroid=centroid
             )
@@ -316,34 +316,56 @@ class ClusteringService:
         
         return summaries
     
-    def _extract_keywords(self, cluster_metadata: List[Dict], top_k: int = 5) -> List[str]:
-        """Extract keywords from cluster documents"""
-        # Simple keyword extraction: collect all words and find most common
+    async def _extract_keywords(self, cluster_metadata: List[Dict], db: AsyncSession, top_k: int = 5) -> List[str]:
+        """Extract keywords from cluster documents/chunks"""
         all_words = []
         
-        for meta in cluster_metadata:
-            # Use filename and description/chunk content
-            text = meta.get('filename', '').lower()
-            if meta.get('description'):
-                text += ' ' + meta.get('description', '').lower()
-            if meta.get('chunk_content'):
-                text += ' ' + meta.get('chunk_content', '').lower()
+        # Collect all document IDs in this cluster
+        document_ids = list(set(meta['document_id'] for meta in cluster_metadata))
+        
+        # Fetch document chunks for better keyword extraction
+        if document_ids:
+            query = select(Document).options(selectinload(Document.chunks)).where(Document.id.in_(document_ids))
+            result = await db.execute(query)
+            documents = result.scalars().all()
             
-            # Simple tokenization
-            words = text.split()
-            # Filter out common words and short words
-            stop_words = {
-                'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-                'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
-                'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
-                'would', 'should', 'could', 'may', 'might', 'must', 'can', 'this',
-                'that', 'these', 'those', 'it', 'its', 'their', 'there', 'pdf', 'docx'
-            }
-            filtered_words = [
-                w for w in words 
-                if len(w) > 3 and w.isalpha() and w not in stop_words
-            ]
-            all_words.extend(filtered_words)
+            # Create mapping of document_id to chunks
+            doc_chunks = {}
+            for doc in documents:
+                doc_chunks[doc.id] = [chunk.content for chunk in doc.chunks]
+        
+        for meta in cluster_metadata:
+            text_parts = []
+            
+            # Add filename (clean it up)
+            filename = meta.get('filename', '').lower()
+            # Remove extension and clean filename
+            filename = filename.replace('.docx', '').replace('.pdf', '').replace('_', ' ')
+            text_parts.append(filename)
+            
+            # Add description if available
+            if meta.get('description'):
+                text_parts.append(meta['description'].lower())
+            
+            # Add chunk content (for chunk-level) or document chunks (for document-level)
+            if meta.get('chunk_content'):
+                # Chunk-level: use the chunk content
+                text_parts.append(meta['chunk_content'].lower())
+            else:
+                # Document-level: use chunks from the document
+                doc_id = meta['document_id']
+                if doc_id in doc_chunks:
+                    # Use first few chunks for keyword extraction
+                    chunk_texts = doc_chunks[doc_id][:3]  # Limit to first 3 chunks
+                    for chunk_text in chunk_texts:
+                        text_parts.append(chunk_text.lower())
+            
+            # Combine all text
+            full_text = ' '.join(text_parts)
+            
+            # Improved tokenization for Vietnamese
+            words = self._tokenize_text(full_text)
+            all_words.extend(words)
         
         if not all_words:
             return []
@@ -352,6 +374,46 @@ class ClusteringService:
         word_counts = Counter(all_words)
         keywords = [word for word, count in word_counts.most_common(top_k)]
         return keywords
+    
+    def _tokenize_text(self, text: str) -> List[str]:
+        """Improved tokenization for Vietnamese and English text"""
+        import re
+        
+        # Simple tokenization: split on whitespace and punctuation
+        words = re.findall(r'\b\w+\b', text.lower())
+        
+        # Enhanced Vietnamese + English stop words
+        stop_words = {
+            # English stop words
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+            'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
+            'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
+            'would', 'should', 'could', 'may', 'might', 'must', 'can', 'this',
+            'that', 'these', 'those', 'it', 'its', 'their', 'there', 'pdf', 'docx',
+            'doc', 'file', 'document', 'page', 'pages', 'content', 'text', 'data',
+            
+            # Vietnamese stop words
+            'và', 'hoặc', 'nhưng', 'trong', 'trên', 'tại', 'đến', 'cho', 'của',
+            'với', 'bởi', 'từ', 'như', 'là', 'được', 'có', 'đã', 'đang', 'đi',
+            'để', 'này', 'nọ', 'ấy', 'kia', 'đó', 'đây', 'sẽ', 'có', 'không',
+            'rất', 'về', 'vào', 'ra', 'ngoài', 'vào', 'lên', 'xuống', 'qua',
+            'lại', 'mới', 'cũ', 'nhiều', 'ít', 'tốt', 'xấu', 'đẹp', 'xấu',
+            'lớn', 'nhỏ', 'cao', 'thấp', 'dài', 'ngắn', 'rộng', 'hẹp', 'mạnh',
+            'yếu', 'nhanh', 'chậm', 'dễ', 'khó', 'đúng', 'sai', 'phải', 'trái',
+            'trước', 'sau', 'trên', 'dưới', 'bên', 'giữa', 'giống', 'khác',
+            'hơn', 'kém', 'bằng', 'nhau', 'cùng', 'riêng', 'chỉ', 'đều', 'cả',
+            'toàn', 'mọi', 'từng', 'đều', 'còn', 'vẫn', 'chưa', 'đang', 'sắp',
+            'sẽ', 'đã', 'mới', 'lại', 'vừa', 'mới', 'đang', 'sắp', 'sẽ', 'đã',
+            'thì', 'mà', 'nên', 'phải', 'cần', 'nên', 'có', 'không', 'rồi', 'thôi'
+        }
+        
+        # Filter words: length > 2, alphabetic, not in stop words
+        filtered_words = [
+            w for w in words 
+            if len(w) > 2 and w.isalpha() and w not in stop_words
+        ]
+        
+        return filtered_words
     
     async def get_cluster_stats(
         self,

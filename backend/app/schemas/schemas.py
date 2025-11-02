@@ -223,7 +223,7 @@ class ClusterPoint(BaseModel):
 class ClusterSummary(BaseModel):
     cluster_id: int
     size: int
-    representative_docs: List[Dict[str, Any]]
+    representative_docs: List[Dict[str, Any]]  # All documents in the cluster (not just representative ones)
     keywords: Optional[List[str]] = None
     centroid: Optional[List[float]] = None
 
