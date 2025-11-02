@@ -62,20 +62,32 @@ A comprehensive Document Management System (CMS/DMS) using Qdrant as a vector da
   - Export metadata to CSV for analysis
   - Bulk export functionality
 
+- **🔍 Semantic Clustering & Topic Detection**:
+  - Automatic document grouping by topic/theme
+  - K-Means and HDBSCAN clustering algorithms
+  - Interactive visualization with UMAP/t-SNE
+  - Document and chunk-level clustering
+  - Keyword extraction for cluster topics
+  - Color-blind friendly visualizations
+  - Drill-down into cluster details
+  - See [docs/CLUSTERING.md](docs/CLUSTERING.md) for details
+
 ## Technology Stack
 
 ### Backend
 - **FastAPI**: Modern Python web framework
 - **Qdrant**: Vector database for similarity search
-- **LangChain**: Document processing and chunking
 - **Sentence Transformers**: Local embedding generation
 - **SQLAlchemy**: Database ORM
 - **SQLite**: Metadata storage (upgradable to PostgreSQL)
+- **scikit-learn**: Machine learning for clustering
+- **UMAP & HDBSCAN**: Advanced clustering and dimensionality reduction
 
 ### Frontend
 - **Next.js 14**: React framework with App Router
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first styling
+- **Recharts**: Interactive data visualization
 - **Axios**: HTTP client
 
 ## Quick Start
