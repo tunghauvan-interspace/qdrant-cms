@@ -69,7 +69,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     documents = relationship("Document", back_populates="owner")
-    shared_documents = relationship("DocumentShare", back_populates="user")
+    shared_documents = relationship("DocumentShare", back_populates="user", foreign_keys="DocumentShare.user_id")
     favorites = relationship("DocumentFavorite", back_populates="user")
 
 
@@ -102,8 +102,8 @@ class DocumentShare(Base):
     shared_by_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     
     document = relationship("Document", back_populates="shares")
-    user = relationship("User", back_populates="shared_documents", foreign_keys=[user_id])
-    shared_by = relationship("User", foreign_keys=[shared_by_id])
+    user = relationship("User", back_populates="shared_documents", foreign_keys="DocumentShare.user_id")
+    shared_by = relationship("User", foreign_keys="DocumentShare.shared_by_id")
 
 
 class DocumentAnalytics(Base):
