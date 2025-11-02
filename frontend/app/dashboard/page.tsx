@@ -10,10 +10,14 @@ import {
   previewDocument,
   semanticSearch,
   ragSearch,
+  updateDocument,
+  getDocumentVersions,
+  rollbackToVersion,
   Document,
   DocumentPreview,
   SearchResult,
   RAGResponse,
+  DocumentVersion,
 } from '@/lib/api';
 
 export default function Dashboard() {
@@ -46,15 +50,46 @@ export default function Dashboard() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   
+  // Edit document state
+  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [editIsPublic, setEditIsPublic] = useState('private');
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  
+  // Version history state
+  const [showVersionModal, setShowVersionModal] = useState(false);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [selectedDocumentForVersions, setSelectedDocumentForVersions] = useState<Document | null>(null);
+  
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [selectedDocuments, setSelectedDocuments] = useState<Set<number>>(new Set());
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId !== null) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.relative')) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdownId]);
 
   const checkAuth = async () => {
     const token = localStorage.getItem('token');
@@ -228,6 +263,99 @@ export default function Dashboard() {
     setShowPreviewModal(false);
     setPreviewData(null);
   };
+
+  const handleEditDocument = (doc: Document) => {
+    setEditingDocument(doc);
+    setEditDescription(doc.description || '');
+    setEditTags(doc.tags.map(t => t.name).join(', '));
+    setEditIsPublic(doc.is_public);
+    setEditFile(null);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDocument) return;
+
+    setEditLoading(true);
+    try {
+      // If a new file is provided, upload it (overwrite)
+      if (editFile) {
+        // Delete old document and upload new one
+        await deleteDocument(editingDocument.id);
+        await uploadDocument(editFile, editDescription, editTags, editIsPublic);
+        showToast('success', 'Document updated successfully with new file');
+      } else {
+        // Just update metadata
+        await updateDocument(editingDocument.id, {
+          description: editDescription,
+          tags: editTags.split(',').map(t => t.trim()).filter(t => t),
+          is_public: editIsPublic,
+        });
+        showToast('success', 'Document metadata updated successfully');
+      }
+      
+      await loadDocuments();
+      setShowEditModal(false);
+      setEditingDocument(null);
+    } catch (error) {
+      console.error('Error updating document:', error);
+      showToast('error', 'Failed to update document');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingDocument(null);
+    setEditFile(null);
+  };
+
+  const handleViewVersions = async (doc: Document) => {
+    setSelectedDocumentForVersions(doc);
+    setVersionsLoading(true);
+    setShowVersionModal(true);
+    
+    try {
+      const versionHistory = await getDocumentVersions(doc.id);
+      setVersions(versionHistory);
+    } catch (error) {
+      console.error('Error loading versions:', error);
+      showToast('error', 'Failed to load version history');
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleRollback = async (versionId: number) => {
+    if (!selectedDocumentForVersions) return;
+    
+    if (!confirm('Are you sure you want to rollback to this version? This will create a new version with the previous state.')) {
+      return;
+    }
+
+    try {
+      await rollbackToVersion(selectedDocumentForVersions.id, versionId);
+      showToast('success', 'Document rolled back successfully');
+      await loadDocuments();
+      setShowVersionModal(false);
+    } catch (error) {
+      console.error('Error rolling back:', error);
+      showToast('error', 'Failed to rollback document');
+    }
+  };
+
+  const closeVersionModal = () => {
+    setShowVersionModal(false);
+    setSelectedDocumentForVersions(null);
+    setVersions([]);
+  };
+
+  const toggleDropdown = (docId: number) => {
+    setOpenDropdownId(openDropdownId === docId ? null : docId);
+  };
+
 
   // Calculate statistics using useMemo for performance
   const statistics = useMemo(() => {
@@ -749,12 +877,13 @@ export default function Dashboard() {
                             </td>
                             <td className="px-4 py-4 text-right">
                               <div className="flex items-center justify-end gap-2">
+                                {/* Primary Actions - Always Visible */}
                                 <button
                                   onClick={() => handlePreview(doc.id)}
                                   disabled={previewLoading}
                                   className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                  aria-label={`Preview ${doc.original_filename}`}
-                                  title="Preview"
+                                  aria-label={`View ${doc.original_filename}`}
+                                  title="View Document"
                                 >
                                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -762,15 +891,75 @@ export default function Dashboard() {
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(doc.id, doc.original_filename)}
-                                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  aria-label={`Delete ${doc.original_filename}`}
-                                  title="Delete"
+                                  onClick={() => handleEditDocument(doc)}
+                                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  aria-label={`Edit ${doc.original_filename}`}
+                                  title="Edit Document"
                                 >
                                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
                                 </button>
+                                
+                                {/* More Actions Dropdown */}
+                                <div className="relative">
+                                  <button
+                                    onClick={() => toggleDropdown(doc.id)}
+                                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                                    aria-label="More actions"
+                                    title="More Actions"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                    </svg>
+                                  </button>
+                                  
+                                  {/* Dropdown Menu */}
+                                  {openDropdownId === doc.id && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 animate-scale-in">
+                                      <div className="py-1">
+                                        <button
+                                          onClick={() => {
+                                            handleViewVersions(doc);
+                                            setOpenDropdownId(null);
+                                          }}
+                                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                        >
+                                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                          Version History
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(doc.original_filename);
+                                            showToast('success', 'Filename copied to clipboard');
+                                            setOpenDropdownId(null);
+                                          }}
+                                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                        >
+                                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                          </svg>
+                                          Copy Filename
+                                        </button>
+                                        <div className="border-t border-gray-200 my-1"></div>
+                                        <button
+                                          onClick={() => {
+                                            handleDelete(doc.id, doc.original_filename);
+                                            setOpenDropdownId(null);
+                                          }}
+                                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                        >
+                                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -1216,6 +1405,230 @@ export default function Dashboard() {
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
               <button
                 onClick={closePreviewModal}
+                className="btn btn-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Document Modal */}
+      {showEditModal && editingDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col animate-scale-in">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-gray-900">Edit Document</h2>
+                  <p className="text-sm text-gray-600">{editingDocument.original_filename}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    handleViewVersions(editingDocument);
+                    closeEditModal();
+                  }}
+                  className="px-3 py-1.5 text-sm text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center"
+                  title="View version history"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  History
+                </button>
+              </div>
+              <button
+                onClick={closeEditModal}
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Close edit modal"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSaveEdit} className="space-y-4">
+                <div>
+                  <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    id="edit-description"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Document description"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-tags" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags (comma separated)
+                  </label>
+                  <input
+                    id="edit-tags"
+                    type="text"
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="tag1, tag2, tag3"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-visibility" className="block text-sm font-medium text-gray-700 mb-2">
+                    Visibility
+                  </label>
+                  <select
+                    id="edit-visibility"
+                    value={editIsPublic}
+                    onChange={(e) => setEditIsPublic(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-file" className="block text-sm font-medium text-gray-700 mb-2">
+                    Replace File (Optional)
+                  </label>
+                  <input
+                    id="edit-file"
+                    type="file"
+                    accept=".pdf,.docx,.doc"
+                    onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload a new file to replace the current one. Leave empty to update only metadata.
+                  </p>
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={closeEditModal}
+                className="btn btn-secondary"
+                disabled={editLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="btn btn-primary"
+                disabled={editLoading}
+              >
+                {editLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal */}
+      {showVersionModal && selectedDocumentForVersions && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-scale-in">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Version History</h2>
+                  <p className="text-sm text-gray-600">{selectedDocumentForVersions.original_filename}</p>
+                </div>
+              </div>
+              <button
+                onClick={closeVersionModal}
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Close version history"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {versionsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                </div>
+              ) : versions.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No version history available</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {versions.map((version) => (
+                    <div key={version.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <span className="badge bg-purple-100 text-purple-800">
+                              Version {version.version_number}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              {new Date(version.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          {version.change_summary && (
+                            <p className="text-sm text-gray-700 mb-2">{version.change_summary}</p>
+                          )}
+                          {version.description && (
+                            <p className="text-xs text-gray-600 mb-2">Description: {version.description}</p>
+                          )}
+                          {version.tags_snapshot && version.tags_snapshot.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {version.tags_snapshot.map((tag, idx) => (
+                                <span key={idx} className="badge bg-gray-100 text-gray-600 text-xs">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleRollback(version.id)}
+                          className="btn btn-sm btn-secondary ml-4"
+                          title="Rollback to this version"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          Rollback
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={closeVersionModal}
                 className="btn btn-secondary"
               >
                 Close
