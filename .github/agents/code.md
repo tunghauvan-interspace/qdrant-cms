@@ -37,3 +37,4 @@ To ensure UI/UX and product-first development, the agent follows this workflow:
 - Seek user approval for major code changes or architectural decisions
 - Provide clear explanations for all suggestions and recommendations
 - Run e2e Playwright tests locally in the agent session before pushing any commit to ensure they pass
+- Include screenshots and test results in pull request comments for UI changes and test validations
