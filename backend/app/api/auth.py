@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import timedelta
+from typing import Optional
 from database import get_db
 from app.models.models import User
 from app.schemas.schemas import UserCreate, UserResponse, Token
@@ -55,6 +56,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
+    remember_me: Optional[bool] = Form(False),
     db: AsyncSession = Depends(get_db)
 ):
     """Login user and return access token"""
@@ -68,7 +70,12 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    # Set token expiration based on remember_me
+    if remember_me:
+        access_token_expires = timedelta(days=settings.remember_me_expire_days)
+    else:
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
