@@ -267,10 +267,11 @@ async def list_tags(
 async def preview_document(
     document_id: int,
     highlight_chunks: Optional[str] = None,  # Comma-separated list of chunk IDs to highlight
+    chunk_scores: Optional[str] = None,  # Comma-separated list of chunk scores (format: "chunk_id:score,chunk_id:score")
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get a preview of document content with optional chunk highlighting"""
+    """Get a preview of document content with optional chunk highlighting and scores"""
     result = await db.execute(
         select(Document)
         .options(selectinload(Document.chunks))
@@ -302,8 +303,22 @@ async def preview_document(
         # Build chunk information with positions in the text
         chunks_info = []
         highlight_chunk_ids = set()
+        chunk_score_map = {}  # Map of chunk_id -> score
+        
         if highlight_chunks:
             highlight_chunk_ids = set(int(cid) for cid in highlight_chunks.split(",") if cid.strip().isdigit())
+        
+        # Parse chunk scores if provided (format: "chunk_id:score,chunk_id:score")
+        if chunk_scores:
+            for pair in chunk_scores.split(","):
+                if ":" in pair:
+                    try:
+                        chunk_id_str, score_str = pair.split(":")
+                        chunk_id = int(chunk_id_str.strip())
+                        score = float(score_str.strip())
+                        chunk_score_map[chunk_id] = score
+                    except (ValueError, IndexError):
+                        pass  # Skip invalid entries
         
         # Sort chunks by index
         sorted_chunks = sorted(document.chunks, key=lambda c: c.chunk_index)
@@ -314,14 +329,20 @@ async def preview_document(
             chunk_start = text.find(chunk.content, current_position)
             if chunk_start >= 0:
                 chunk_end = chunk_start + len(chunk.content)
-                chunks_info.append({
+                chunk_info = {
                     "chunk_id": chunk.id,
                     "chunk_index": chunk.chunk_index,
                     "start": chunk_start,
                     "end": chunk_end,
                     "content": chunk.content,
                     "highlighted": chunk.id in highlight_chunk_ids
-                })
+                }
+                
+                # Add score if available
+                if chunk.id in chunk_score_map:
+                    chunk_info["score"] = chunk_score_map[chunk.id]
+                
+                chunks_info.append(chunk_info)
                 current_position = chunk_end
         
         return DocumentPreviewResponse(

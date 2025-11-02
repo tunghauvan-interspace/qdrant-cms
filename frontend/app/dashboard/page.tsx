@@ -246,10 +246,10 @@ export default function Dashboard() {
     }
   };
 
-  const handlePreview = async (id: number, highlightChunks?: number[]) => {
+  const handlePreview = async (id: number, highlightChunks?: number[], chunkScores?: Map<number, number>) => {
     setPreviewLoading(true);
     try {
-      const preview = await previewDocument(id, highlightChunks);
+      const preview = await previewDocument(id, highlightChunks, chunkScores);
       setPreviewData(preview);
       setShowPreviewModal(true);
     } catch (error) {
@@ -261,9 +261,15 @@ export default function Dashboard() {
   };
 
   const handlePreviewFromSearch = async (result: SearchResult) => {
-    // Extract chunk IDs from matching chunks
+    // Extract chunk IDs and scores from matching chunks
     const chunkIds = result.matching_chunks?.map(c => c.chunk_id) || [];
-    await handlePreview(result.document_id, chunkIds);
+    const chunkScores = new Map<number, number>();
+    
+    result.matching_chunks?.forEach(chunk => {
+      chunkScores.set(chunk.chunk_id, chunk.score);
+    });
+    
+    await handlePreview(result.document_id, chunkIds, chunkScores);
   };
 
   const closePreviewModal = () => {
@@ -363,7 +369,7 @@ export default function Dashboard() {
     setOpenDropdownId(openDropdownId === docId ? null : docId);
   };
 
-  // Helper function to render content with highlighted chunks
+  // Helper function to render content with highlighted chunks and hover tooltips
   const renderHighlightedContent = (content: string, chunks: any[]) => {
     if (!chunks || chunks.length === 0) {
       return content;
@@ -385,12 +391,25 @@ export default function Dashboard() {
       
       // Add the chunk with highlighting if it's marked as highlighted
       if (chunk.highlighted) {
+        const matchPercent = chunk.score ? (chunk.score * 100).toFixed(1) : null;
+        
         elements.push(
           <mark 
             key={`chunk-${index}`}
-            className="bg-yellow-200 px-1 rounded"
+            className="bg-yellow-200 hover:bg-yellow-300 px-1 rounded cursor-help transition-colors relative inline-block group"
+            title={matchPercent ? `${matchPercent}% match` : 'Highlighted section'}
+            role="mark"
+            aria-label={matchPercent ? `Matching section with ${matchPercent}% relevance` : 'Matching section'}
           >
             {content.substring(chunk.start, chunk.end)}
+            {matchPercent && (
+              <span 
+                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10"
+                role="tooltip"
+              >
+                {matchPercent}% match
+              </span>
+            )}
           </mark>
         );
       } else {

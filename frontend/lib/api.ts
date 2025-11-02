@@ -74,6 +74,7 @@ export interface ChunkInfo {
   end: number;
   content: string;
   highlighted: boolean;
+  score?: number;  // Match score for this chunk (0-1)
 }
 
 export interface DocumentPreview {
@@ -196,11 +197,26 @@ export const deleteDocument = async (id: number) => {
   return response.data;
 };
 
-export const previewDocument = async (id: number, highlightChunks?: number[]) => {
+export const previewDocument = async (id: number, highlightChunks?: number[], chunkScores?: Map<number, number>) => {
   let url = `/api/documents/${id}/preview`;
+  const params = [];
+  
   if (highlightChunks && highlightChunks.length > 0) {
-    url += `?highlight_chunks=${highlightChunks.join(',')}`;
+    params.push(`highlight_chunks=${highlightChunks.join(',')}`);
   }
+  
+  if (chunkScores && chunkScores.size > 0) {
+    // Convert map to "chunk_id:score,chunk_id:score" format
+    const scoreStr = Array.from(chunkScores.entries())
+      .map(([chunkId, score]) => `${chunkId}:${score}`)
+      .join(',');
+    params.push(`chunk_scores=${encodeURIComponent(scoreStr)}`);
+  }
+  
+  if (params.length > 0) {
+    url += `?${params.join('&')}`;
+  }
+  
   const response = await api.get(url);
   return response.data;
 };
