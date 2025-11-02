@@ -197,3 +197,54 @@ class BulkShareRequest(BaseModel):
 class ExportRequest(BaseModel):
     document_ids: List[int]
     format: str  # pdf, docx, json
+
+
+# Clustering schemas
+class ClusterRequest(BaseModel):
+    algorithm: str = "kmeans"  # kmeans, hdbscan
+    n_clusters: Optional[int] = 5  # For k-means
+    min_cluster_size: Optional[int] = 5  # For HDBSCAN
+    reduction_method: str = "umap"  # umap, tsne
+    level: str = "document"  # document or chunk
+
+
+class ClusterPoint(BaseModel):
+    id: str  # document_id or chunk_id
+    x: float
+    y: float
+    cluster_id: int
+    document_id: int
+    filename: str
+    chunk_index: Optional[int] = None
+    chunk_content: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ClusterSummary(BaseModel):
+    cluster_id: int
+    size: int
+    representative_docs: List[Dict[str, Any]]
+    keywords: Optional[List[str]] = None
+    centroid: Optional[List[float]] = None
+
+
+class ClusterResult(BaseModel):
+    points: List[ClusterPoint]
+    summaries: List[ClusterSummary]
+    algorithm: str
+    n_clusters: int
+    reduction_method: str
+    level: str
+
+
+class ClusterSearchQuery(BaseModel):
+    cluster_id: int
+    query: Optional[str] = None
+    limit: int = 10
+
+
+class ClusterSearchRequest(BaseModel):
+    cluster_id: int
+    query: Optional[str] = None
+    limit: int = 10
+    cluster_result: ClusterResult
