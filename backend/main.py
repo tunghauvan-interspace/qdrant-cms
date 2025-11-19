@@ -3,12 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import init_db
 from app.api import auth, documents, search, clustering
+from app.worker import celery_app
+from app.utils.init_data import ensure_default_admin
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await init_db()
+    try:
+        await init_db()
+        print("Database initialized successfully")
+        await ensure_default_admin()
+    except Exception as e:
+        print(f"Startup initialization error: {e}")
+        # Don't fail startup if DB init fails
     yield
     # Shutdown
     pass

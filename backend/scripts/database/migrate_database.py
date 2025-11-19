@@ -61,6 +61,35 @@ async def upgrade():
                 ))
             else:
                 print("   version column already exists")
+
+            # Check if status column exists
+            result = await conn.execute(
+                text("SELECT COUNT(*) FROM pragma_table_info('documents') WHERE name='status'")
+            )
+            if result.scalar() == 0:
+                print("   Adding status column to documents table...")
+                await conn.execute(text(
+                    "ALTER TABLE documents ADD COLUMN status VARCHAR DEFAULT 'pending'"
+                ))
+                # Set initial values
+                await conn.execute(text(
+                    "UPDATE documents SET status = 'completed' WHERE status IS NULL"
+                ))
+            else:
+                print("   status column already exists")
+
+            # Check if processing_error column exists
+            result = await conn.execute(
+                text("SELECT COUNT(*) FROM pragma_table_info('documents') WHERE name='processing_error'")
+            )
+            if result.scalar() == 0:
+                print("   Adding processing_error column to documents table...")
+                await conn.execute(text(
+                    "ALTER TABLE documents ADD COLUMN processing_error TEXT"
+                ))
+            else:
+                print("   processing_error column already exists")
+
         except Exception as e:
             print(f"   Error adding columns to documents table: {e}")
             print("   Continuing with table creation...")

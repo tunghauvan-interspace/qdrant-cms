@@ -32,6 +32,24 @@ class Settings(BaseSettings):
     # Application Settings
     upload_dir: str = "./uploads"
     max_file_size: int = 50000000  # 50MB
+
+    # OCR Configuration
+    ocr_api_key: Optional[str] = None
+    ocr_base_url: str = "https://mkp-api.fptcloud.com"
+    ocr_model_name: str = "gemma-3-27b-it"
+    ocr_dpi: int = 200
+    ocr_temperature: float = 0.1
+    ocr_max_tokens: int = 4000
+
+    # MinIO Configuration
+    minio_endpoint: str = "minio:9000"
+    minio_access_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin"
+    minio_bucket_name: str = "documents"
+    minio_secure: bool = False
+
+    # Redis / Celery Configuration
+    redis_url: str = "redis://redis:6379/0"
     
     class Config:
         env_file = ".env"

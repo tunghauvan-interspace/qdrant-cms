@@ -39,6 +39,8 @@ export interface Document {
   tags: Tag[];
   last_modified?: string;
   version?: number;
+  status?: string;
+  processing_error?: string | null;
 }
 
 export interface Tag {

@@ -156,7 +156,7 @@ export default function Dashboard() {
       setUploadTags('');
       setUploadIsPublic('private');
       await loadDocuments();
-      showToast('success', 'Document uploaded and indexed successfully');
+      showToast('success', 'Document uploaded successfully! Processing in background - check status in your documents list.');
       setActiveTab('documents');
     } catch (error: any) {
       setUploadError(error.response?.data?.detail || 'Upload failed');
@@ -976,9 +976,32 @@ export default function Dashboard() {
                                   </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-gray-900 truncate">
-                                    {doc.original_filename}
-                                  </p>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="text-sm font-semibold text-gray-900 truncate">
+                                      {doc.original_filename}
+                                    </p>
+                                    {doc.status && doc.status !== 'completed' && (
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                        doc.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                        doc.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {doc.status === 'processing' && (
+                                          <svg className="w-3 h-3 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                          </svg>
+                                        )}
+                                        {doc.status === 'failed' && (
+                                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                        )}
+                                        {doc.status === 'processing' ? 'Processing' :
+                                         doc.status === 'failed' ? 'Failed' :
+                                         doc.status}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="flex items-center space-x-2 mt-1">
                                     <span className="badge bg-indigo-100 text-indigo-700 text-xs">
                                       {doc.file_type.toUpperCase()}
@@ -987,6 +1010,11 @@ export default function Dashboard() {
                                       {doc.is_public === 'public' ? 'Public' : 'Private'}
                                     </span>
                                   </div>
+                                  {doc.processing_error && (
+                                    <p className="text-xs text-red-600 mt-1 truncate" title={doc.processing_error}>
+                                      Error: {doc.processing_error}
+                                    </p>
+                                  )}
                                   {doc.description && (
                                     <p className="text-xs text-gray-500 mt-1 line-clamp-1">{doc.description}</p>
                                   )}
@@ -1007,6 +1035,24 @@ export default function Dashboard() {
                                   </svg>
                                   {new Date(doc.upload_date).toLocaleDateString()}
                                 </div>
+                                {doc.status && (
+                                  <div className="flex items-center text-xs">
+                                    <svg className="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className={`font-medium ${
+                                      doc.status === 'completed' ? 'text-green-600' :
+                                      doc.status === 'processing' ? 'text-yellow-600' :
+                                      doc.status === 'failed' ? 'text-red-600' :
+                                      'text-gray-600'
+                                    }`}>
+                                      {doc.status === 'completed' ? 'Ready' :
+                                       doc.status === 'processing' ? 'Processing' :
+                                       doc.status === 'failed' ? 'Failed' :
+                                       doc.status}
+                                    </span>
+                                  </div>
+                                )}
                                 {doc.tags.length > 0 && (
                                   <div className="flex flex-wrap gap-1">
                                     {doc.tags.slice(0, 3).map((tag) => (
@@ -1166,7 +1212,7 @@ export default function Dashboard() {
                               id="file-upload"
                               name="file-upload"
                               type="file"
-                              accept=".pdf,.docx,.doc"
+                              accept=".pdf,.docx,.doc,.md"
                               onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
                               className="sr-only"
                               required
@@ -1174,7 +1220,7 @@ export default function Dashboard() {
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500">PDF or DOCX up to 50MB</p>
+                        <p className="text-xs text-gray-500">PDF, DOCX, DOC, or MD up to 50MB</p>
                         {uploadFile && !uploadLoading && (
                           <p className="text-sm font-medium text-indigo-600 mt-2 flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1191,7 +1237,9 @@ export default function Dashboard() {
                   {uploadLoading && uploadProgress > 0 && (
                     <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-indigo-900">Uploading and indexing...</span>
+                        <span className="text-sm font-medium text-indigo-900">
+                          {uploadProgress < 90 ? 'Uploading document...' : 'Document uploaded, processing in background...'}
+                        </span>
                         <span className="text-sm font-semibold text-indigo-600">{uploadProgress}%</span>
                       </div>
                       <div className="w-full bg-indigo-200 rounded-full h-2.5">
@@ -1200,7 +1248,12 @@ export default function Dashboard() {
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
-                      <p className="text-xs text-indigo-700 mt-2">Processing document with AI embeddings...</p>
+                      <p className="text-xs text-indigo-700 mt-2">
+                        {uploadProgress < 90 
+                          ? 'Storing file securely...' 
+                          : 'OCR processing and AI indexing will complete shortly. Check status in your documents list.'
+                        }
+                      </p>
                     </div>
                   )}
 
@@ -1837,7 +1890,7 @@ export default function Dashboard() {
                   <input
                     id="edit-file"
                     type="file"
-                    accept=".pdf,.docx,.doc"
+                    accept=".pdf,.docx,.doc,.md"
                     onChange={(e) => setEditFile(e.target.files?.[0] || null)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />

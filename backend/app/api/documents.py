@@ -24,6 +24,8 @@ from app.services.share_service import share_service
 from app.services.analytics_service import analytics_service
 from app.services.favorite_service import favorite_service
 from app.services.export_service import export_service
+from app.services.storage_service import storage_service
+from app.tasks import process_document_task
 from config import settings
 import io
 
@@ -43,10 +45,10 @@ async def upload_document(
     """Upload a new document"""
     # Validate file type
     file_ext = file.filename.split(".")[-1].lower()
-    if file_ext not in ["pdf", "docx", "doc"]:
+    if file_ext not in ["pdf", "docx", "doc", "md"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF and DOCX files are supported"
+            detail="Only PDF, DOCX, DOC, and MD files are supported"
         )
     
     # Read file content
@@ -59,27 +61,33 @@ async def upload_document(
             detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes"
         )
     
-    # Generate unique filename
+    # Generate unique filename/object name
     unique_filename = f"{uuid.uuid4()}_{file.filename}"
-    file_path = os.path.join(settings.upload_dir, unique_filename)
     
-    # Ensure upload directory exists
-    os.makedirs(settings.upload_dir, exist_ok=True)
-    
-    # Save file
-    with open(file_path, "wb") as f:
-        f.write(file_content)
+    try:
+        # Upload to MinIO
+        storage_service.upload_file(
+            file_content, 
+            unique_filename, 
+            content_type=file.content_type
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file to storage: {str(e)}"
+        )
     
     # Create document record
     document = Document(
         filename=unique_filename,
         original_filename=file.filename,
         file_type=file_ext,
-        file_path=file_path,
+        file_path=unique_filename, # Storing object name as file_path
         file_size=file_size,
         owner_id=current_user.id,
         description=description,
-        is_public=is_public
+        is_public=is_public,
+        status="pending"
     )
     
     db.add(document)
@@ -99,58 +107,21 @@ async def upload_document(
             
             document.tags.append(tag)
     
-    # Process document and create chunks
-    try:
-        text = document_processor.process_document(file_content, file_ext)
-        chunks = document_processor.chunk_text(text)
-        
-        # Store chunks in Qdrant and database
-        for idx, chunk_text in enumerate(chunks):
-            chunk_id = str(uuid.uuid4())
-            
-            # Add to Qdrant
-            qdrant_service.add_document_chunk(
-                chunk_id=chunk_id,
-                text=chunk_text,
-                document_id=document.id,
-                metadata={
-                    "filename": document.original_filename,
-                    "owner_id": current_user.id,
-                    "chunk_index": idx
-                }
-            )
-            
-            # Add to database
-            chunk = DocumentChunk(
-                document_id=document.id,
-                chunk_index=idx,
-                content=chunk_text,
-                qdrant_point_id=chunk_id
-            )
-            db.add(chunk)
-        
-        await db.commit()
-        await db.refresh(document)
-        
-        # Load relationships
-        result = await db.execute(
-            select(Document)
-            .options(selectinload(Document.tags))
-            .where(Document.id == document.id)
-        )
-        document = result.scalar_one()
-        
-        return document
+    await db.commit()
+    await db.refresh(document)
     
-    except Exception as e:
-        # Cleanup on error
-        await db.rollback()
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error processing document: {str(e)}"
-        )
+    # Trigger async processing
+    process_document_task.delay(document.id)
+    
+    # Reload with relationships to avoid MissingGreenlet error
+    result = await db.execute(
+        select(Document)
+        .options(selectinload(Document.tags))
+        .where(Document.id == document.id)
+    )
+    document = result.scalar_one()
+    
+    return document
 
 
 @router.get("/", response_model=List[DocumentResponse])
@@ -243,9 +214,11 @@ async def delete_document(
     if chunk_ids:
         qdrant_service.delete_document_chunks(chunk_ids)
     
-    # Delete file
-    if os.path.exists(document.file_path):
-        os.remove(document.file_path)
+    # Delete file from MinIO
+    try:
+        storage_service.delete_file(document.file_path)
+    except Exception as e:
+        logger.error(f"Error deleting file from storage: {e}")
     
     # Delete from database
     await db.delete(document)
@@ -296,8 +269,8 @@ async def preview_document(
     
     # Read file content and extract text
     try:
-        with open(document.file_path, "rb") as f:
-            file_content = f.read()
+        # Download from MinIO
+        file_content = storage_service.download_file(document.file_path)
         
         # Extract text from document
         text = document_processor.process_document(file_content, document.file_type)

@@ -28,6 +28,10 @@ class Document(Base):
     last_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     version = Column(Integer, default=1)
     
+    # Processing status
+    status = Column(String, default="pending")  # pending, processing, completed, failed
+    processing_error = Column(Text, nullable=True)
+
     owner = relationship("User", back_populates="documents")
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")

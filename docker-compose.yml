@@ -20,9 +20,50 @@ services:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - DATABASE_URL=sqlite+aiosqlite:///./documents.db
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       - qdrant
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      - minio
+      - redis
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+  ocr-worker:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - DATABASE_URL=sqlite+aiosqlite:///./documents.db
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+      - minio
+    command: celery -A app.worker.celery_app worker --loglevel=info -Q main-queue
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
 
   frontend:
     build: ./frontend
@@ -52,3 +93,4 @@ services:
 
 volumes:
   qdrant_storage:
+  minio_data:

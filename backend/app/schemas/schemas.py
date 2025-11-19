@@ -67,6 +67,8 @@ class DocumentResponse(BaseModel):
     tags: List[TagResponse]
     last_modified: Optional[datetime] = None
     version: Optional[int] = None
+    status: Optional[str] = "pending"
+    processing_error: Optional[str] = None
     
     class Config:
         from_attributes = True
