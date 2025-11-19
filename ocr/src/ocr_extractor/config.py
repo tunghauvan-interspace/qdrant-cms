@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     api_key: str = Field(..., alias="OCR_API_KEY")  # Required
     model_name: str = Field(default="gemma-3-27b-it", alias="OCR_MODEL_NAME")
     reconstruction_model_name: str = Field(
-        default="gpt-oss-20b", alias="OCR_RECONSTRUCTION_MODEL_NAME"
+        ..., alias="OCR_RECONSTRUCTION_MODEL_NAME"
     )
 
     # Processing Configuration
